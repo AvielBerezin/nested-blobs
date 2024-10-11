@@ -35,7 +35,12 @@ public class World {
         for (int i = 0; i < 9; i++) {
             Blob.generateBlob(random);
         }
+        System.out.println("blobs");
         Blob.all.forEach(System.out::println);
+        System.out.println();
+        System.out.println("client view");
+        World world = all.get(4);
+        ((Blob) world).clientView(20).forEach(System.out::println);
     }
 
     public static final class Blob extends World {
