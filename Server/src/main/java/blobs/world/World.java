@@ -132,7 +132,7 @@ public class World {
         @Override
         public String toString() {
             int lvl = 0;
-            World world = home;
+            World world = this;
             while (world != world.home) {
                 world = world.home;
                 lvl++;
