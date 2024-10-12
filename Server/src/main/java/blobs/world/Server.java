@@ -12,15 +12,10 @@ import java.util.List;
 import java.util.Random;
 
 public class Server extends WebSocketServer {
+    static int seed = 4;
 
     static {
-        Random random = new Random(0);
-        for (int i = 0; i < 9; i++) {
-            World.Blob.generateBlob(random);
-        }
     }
-
-    private static final List<ClientBlob> clientBlobs = ((World.Blob) World.all.get(4)).clientView(20);
 
     public static final ObjectMapper mapper = new ObjectMapper();
 
@@ -30,6 +25,15 @@ public class Server extends WebSocketServer {
 
     @Override
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
+        Random random = new Random(seed);
+        World world = new World(random);
+        for (int i = 0; i < 20; i++) {
+            world.generateResident();
+        }
+        List<ClientBlob> clientBlobs = world.allResidents().get(3).clientView(20);
+        System.out.println(seed + ": " + clientBlobs.size() + " blobs");
+        seed++;
+
         try {
             conn.send(mapper.writeValueAsString(clientBlobs));
         } catch (JsonProcessingException e) {
@@ -56,7 +60,8 @@ public class Server extends WebSocketServer {
 
     @Override
     public void onError(WebSocket conn, Exception ex) {
-        System.err.println("an error occurred on connection " + conn.getRemoteSocketAddress() + ":" + ex);
+        System.err.println("an error occurred on connection " + conn.getRemoteSocketAddress());
+        ex.printStackTrace();
     }
 
     @Override

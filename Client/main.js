@@ -20,7 +20,7 @@ socket.onmessage = (event) => {
             fill: 'red',
             stroke: 'black',
             strokeWidth: 4,
-            opacity: 0.5,
+            opacity: 0.4,
         }));
     })
     // add the layer to the stage
