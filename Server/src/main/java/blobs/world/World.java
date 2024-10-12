@@ -29,7 +29,7 @@ public class World implements Blob {
         return "World";
     }
 
-    public void generateResident() {
+    public Resident generateResident() {
         Blob blob = all.get(random.nextInt(all().size()));
         double r = 0.1;
         double d;
@@ -54,7 +54,7 @@ public class World implements Blob {
             }
         }
 
-        new Resident(this, blob, x, y, r);
+        return new Resident(this, blob, x, y, r);
     }
 
     @Override
