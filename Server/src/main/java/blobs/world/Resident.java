@@ -1,7 +1,5 @@
 package blobs.world;
 
-import blobs.client.ClientBlob;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -41,42 +39,6 @@ public final class Resident implements Blob {
         this.r = leftHome.r() * r();
         this.x = leftHome.x() + x() * leftHome.r();
         this.y = leftHome.y() + y() * leftHome.r();
-    }
-
-    public List<ClientBlob> clientView(double viewFactor) {
-        List<ClientBlob> result = new LinkedList<>();
-        double viewR = r() * viewFactor;
-        if (home.home() != home) {
-            for (Resident house : home.home().residents()) {
-                if (house != home()) {
-                    double houseRelX = (house.x() - home.x()) / home.r();
-                    double houseRelY = (house.y() - home.y()) / home.r();
-                    double houseRelR = house.r() / home.r();
-
-                    double dx = houseRelX - x();
-                    double dy = houseRelY - y();
-                    double sr = houseRelR + viewR;
-
-                    if (dx * dx + dy * dy < sr * sr) {
-                        result.add(new ClientBlob(dx, dy, houseRelR));
-                    }
-                }
-            }
-        }
-        result.add(new ClientBlob(-x(), -y(), 1));
-        for (Resident resident : home.residents()) {
-            if (resident != this) {
-                double dx = resident.x() - x();
-                double dy = resident.y() - y();
-                double sr = resident.r() + viewR;
-
-                if (dx * dx + dy * dy < sr * sr) {
-                    result.add(new ClientBlob(dx, dy, resident.r()));
-                }
-            }
-        }
-        result.add(new ClientBlob(0, 0, r()));
-        return result;
     }
 
     @Override

@@ -9,17 +9,18 @@ var stage = new Konva.Stage({
 
 var socket = new WebSocket("ws://localhost:80")
 var layer = new Konva.Layer();
-var size = 0.2 * Math.min(stage.width(), stage.height())
+var size = 0.8 * Math.min(stage.width(), stage.height())
 socket.onmessage = (event) => {
-    var blobs = JSON.parse(event.data);
+    const view = JSON.parse(event.data);
+    const { radius, blobs } = view;
     var first = true;
     // add the layer to the stage
     var newLayer = new Konva.Layer();
     blobs.forEach(blob => {
         newLayer.add(new Konva.Circle({
-            x: stage.width() / 2 + size * blob.x,
-            y: stage.height() / 2 + size * blob.y,
-            radius: size * blob.r,
+            x: stage.width() / 2 + blob.x * size / radius / 2,
+            y: stage.height() / 2 + blob.y * size / radius / 2,
+            radius: blob.r * size / radius / 2,
             fill: 'red',
             stroke: 'black',
             strokeWidth: 4,
@@ -33,33 +34,27 @@ socket.onmessage = (event) => {
 
 var moving = false;
 
+function sendMovement() {
+    const pointerPos = stage.getPointerPosition();
+    const x = pointerPos.x - stage.width() / 2;
+    const y = pointerPos.y - stage.height() / 2;
+    const angle = Math.atan(y / x) + +(x < 0) * Math.PI;
+    const relDistance = Math.sqrt((x * x + y * y)) / size * 2;
+    const strength = (relDistance - 0.1) / (0.5 - 0.1);
+    socket.send(JSON.stringify({angle, strength}));
+    console.log(strength)
+}
+
 stage.on('pointerdown', function () {
     moving = true;
-    var pointerPos = stage.getPointerPosition();
-    var x = pointerPos.x - stage.width() / 2;
-    var y = pointerPos.y - stage.height() / 2;
-    var angle = Math.atan(y / x);
-    if (x < 0) {
-        angle = angle + Math.PI;
-    }
-    var strength = Math.sqrt((x * x + y * y)) / size / 2;
-    socket.send(JSON.stringify({angle, strength}));
-    console.log({x,y,angle, strength});
+    sendMovement();
 });
 
 stage.on('pointermove', function () {
     if (!moving) {
         return;
     }
-    var pointerPos = stage.getPointerPosition();
-    var x = pointerPos.x - stage.width() / 2;
-    var y = pointerPos.y - stage.height() / 2;
-    var angle = Math.atan(y / x);
-    if (x < 0) {
-        angle = angle + Math.PI;
-    }
-    var strength = Math.sqrt((x * x + y * y)) / size / 2;
-    socket.send(JSON.stringify({angle, strength}));
+    sendMovement();
 });
 
 stage.on('pointerup', function () {

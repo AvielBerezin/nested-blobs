@@ -1,4 +1,4 @@
-package blobs.client;
+package blobs.client.sent;
 
 public record ClientBlob(double x,
                          double y,

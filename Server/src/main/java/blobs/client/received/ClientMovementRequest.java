@@ -1,4 +1,4 @@
-package blobs.client;
+package blobs.client.received;
 
 public record ClientMovementRequest(double angle, double strength) {
     public ClientMovementRequest(double angle, double strength) {

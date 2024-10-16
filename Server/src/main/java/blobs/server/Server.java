@@ -1,6 +1,6 @@
 package blobs.server;
 
-import blobs.client.ClientMovementRequest;
+import blobs.client.received.ClientMovementRequest;
 import blobs.world.Resident;
 import blobs.world.World;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -9,6 +9,7 @@ import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -19,7 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class Server extends WebSocketServer {
+public class Server extends WebSocketServer implements AutoCloseable {
     private static final ObjectMapper mapper = new ObjectMapper();
     private final World world;
     private final Map<WebSocket, Resident> residents;
@@ -29,10 +30,10 @@ public class Server extends WebSocketServer {
 
     public Server(InetSocketAddress inetSocketAddress) {
         super(inetSocketAddress);
-        world = new World(new Random(0));
-        for (int i = 0; i < 20; i++) {
-            world.generateResident();
-        }
+        world = new World(new Random(2));
+//        for (int i = 0; i < 20; i++) {
+//            world.generateResident();
+//        }
         residents = new ConcurrentHashMap<>();
         scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(this::mainLoop,
@@ -51,7 +52,7 @@ public class Server extends WebSocketServer {
             });
             residents.forEach((conn, resident) -> {
                 try {
-                    conn.send(mapper.writeValueAsString(resident.clientView(20)));
+                    conn.send(mapper.writeValueAsString(resident.pivoted().world().clientView(8)));
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();
                 }
@@ -106,8 +107,20 @@ public class Server extends WebSocketServer {
         System.out.println("server started successfully");
     }
 
-    public static void main(String[] args) {
-        WebSocketServer server = new Server(new InetSocketAddress("localhost", 80));
-        server.run();
+    public static void main(String[] args) throws InterruptedException, IOException {
+        try (Server server = new Server(new InetSocketAddress("localhost", 80))) {
+            server.setDaemon(true);
+            server.start();
+            if (System.in.read() == -1) {
+                System.out.println("reached end of input");
+            }
+        }
+    }
+
+    @Override
+    public void close() throws InterruptedException {
+        System.out.println("stopping...");
+        scheduler.close();
+        this.stop();
     }
 }
