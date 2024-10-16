@@ -69,7 +69,7 @@ public abstract class Blob {
                 }
                 return PivotedBlobViewHome.home(Blob.this.home()
                                                          .pivoted()
-                                                         .offset(position().negate())
+                                                         .offset(Blob.this.position().negate().asCartesian())
                                                          .scale(1 / Blob.this.r()));
             }
 
