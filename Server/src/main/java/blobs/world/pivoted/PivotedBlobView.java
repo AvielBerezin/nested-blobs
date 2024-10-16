@@ -1,23 +1,24 @@
-package blobs.world;
+package blobs.world.pivoted;
 
 import blobs.client.sent.ClientBlob;
 import blobs.client.sent.ClientView;
 import blobs.utils.IterableMap;
+import blobs.world.point.Cartesian;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
 public interface PivotedBlobView {
-    Position position();
+    Cartesian position();
     double r();
     PivotedBlobViewHome home();
     Iterable<PivotedBlobView> residents();
 
-    default PivotedBlobView offset(Position offset) {
+    default PivotedBlobView offset(Cartesian offset) {
         return new PivotedBlobViewWrap(this) {
             @Override
-            public Position position() {
+            public Cartesian position() {
                 return super.position().add(offset);
             }
 
@@ -38,7 +39,7 @@ public interface PivotedBlobView {
     default PivotedBlobView scale(double factor) {
         return new PivotedBlobViewWrap(this) {
             @Override
-            public Position position() {
+            public Cartesian position() {
                 return super.position().multiply(factor);
             }
 
@@ -76,7 +77,7 @@ public interface PivotedBlobView {
     }
 
     default List<ClientBlob> clientBlobsInView(double viewWindowRadius) {
-        Position position = position();
+        Cartesian position = position();
         double r = r();
         double sr = r + viewWindowRadius;
         if (position.squared() > sr * sr) {
@@ -98,7 +99,7 @@ public interface PivotedBlobView {
         }
 
         @Override
-        public Position position() {
+        public Cartesian position() {
             return pivotedBlobView.position();
         }
 

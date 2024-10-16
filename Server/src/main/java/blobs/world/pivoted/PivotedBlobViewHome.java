@@ -1,4 +1,4 @@
-package blobs.world;
+package blobs.world.pivoted;
 
 public interface PivotedBlobViewHome {
     <Res> Res dispatch(PivotedBlobViewHomeDispatcher<Res, Res> dispatcher);

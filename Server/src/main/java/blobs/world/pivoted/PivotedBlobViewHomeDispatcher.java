@@ -1,4 +1,4 @@
-package blobs.world;
+package blobs.world.pivoted;
 
 import java.util.function.Function;
 
@@ -34,7 +34,7 @@ public interface PivotedBlobViewHomeDispatcher<EmptyRes, HomeRes> {
         };
     }
 
-    default <NewHomeRes> PivotedBlobViewHomeDispatcher<EmptyRes, NewHomeRes> withHome(Function<HomeRes, NewHomeRes> emptyMap) {
+    default <NewHomeRes> PivotedBlobViewHomeDispatcher<EmptyRes, NewHomeRes> withHome(Function<HomeRes, NewHomeRes> homeMap) {
         return new PivotedBlobViewHomeDispatcher<>() {
             @Override
             public EmptyRes with(PivotedBlobViewHome.Empty empty) {
@@ -43,7 +43,7 @@ public interface PivotedBlobViewHomeDispatcher<EmptyRes, HomeRes> {
 
             @Override
             public NewHomeRes with(PivotedBlobViewHome.Home home) {
-                return emptyMap.apply(PivotedBlobViewHomeDispatcher.this.with(home));
+                return homeMap.apply(PivotedBlobViewHomeDispatcher.this.with(home));
             }
         };
     }

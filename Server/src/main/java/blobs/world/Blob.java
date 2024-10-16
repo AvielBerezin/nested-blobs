@@ -1,20 +1,24 @@
 package blobs.world;
 
 import blobs.utils.IterableMap;
+import blobs.world.pivoted.PivotedBlobView;
+import blobs.world.pivoted.PivotedBlobViewHome;
+import blobs.world.point.Cartesian;
+import blobs.world.point.Point2D;
 
 import java.util.LinkedList;
 import java.util.List;
 
 public abstract class Blob {
     private final List<Resident> residents;
-    private Position position;
+    private Point2D position;
     private double r;
 
     protected Blob() {
-        this(Position.zero, 1);
+        this(Cartesian.zero, 1);
     }
 
-    protected Blob(Position position, double r) {
+    protected Blob(Point2D position, double r) {
         this.residents = new LinkedList<>();
         this.position = position;
         this.r = r;
@@ -24,7 +28,7 @@ public abstract class Blob {
 
     public abstract Blob home();
 
-    public Position position() {
+    public Point2D position() {
         return position;
     }
 
@@ -32,7 +36,7 @@ public abstract class Blob {
         return r;
     }
 
-    public void position(Position position) {
+    public void position(Cartesian position) {
         this.position = position;
     }
 
@@ -49,8 +53,8 @@ public abstract class Blob {
     public PivotedBlobView pivoted() {
         return new PivotedBlobView() {
             @Override
-            public Position position() {
-                return Position.zero;
+            public Cartesian position() {
+                return Cartesian.zero;
             }
 
             @Override
@@ -74,7 +78,7 @@ public abstract class Blob {
                 return IterableMap.of(Blob.this.residents(), resident ->
                         resident.pivoted()
                                 .scale(resident.r())
-                                .offset(resident.position()));
+                                .offset(resident.position().asCartesian()));
             }
         };
     }

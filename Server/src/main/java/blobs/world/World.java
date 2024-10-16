@@ -1,5 +1,9 @@
 package blobs.world;
 
+import blobs.world.point.Cartesian;
+import blobs.world.point.Point2D;
+import blobs.world.point.Polar;
+
 import java.util.*;
 
 public class World extends Blob {
@@ -24,12 +28,12 @@ public class World extends Blob {
     public Resident generateResident() {
         Blob blob = all.get(random.nextInt(all().size()));
         double r = 0.1;
-        Position position;
+        Point2D position;
         while (true) {
-            position = Position.randomInCircle(random).multiply(1 - r);
-            Position finalPosition = position;
+            position = Polar.randomInCircle(random).multiply(1 - r);
+            Point2D finalPosition = position;
             if (blob.residents().stream().noneMatch(resident -> {
-                Position displacement = resident.position().add(finalPosition.negate());
+                Cartesian displacement = resident.position().add(finalPosition.negate().asCartesian());
                 double sr = resident.r() + r;
                 return displacement.squared() < sr * sr;
             })) {

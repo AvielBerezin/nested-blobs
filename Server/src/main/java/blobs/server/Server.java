@@ -1,9 +1,10 @@
 package blobs.server;
 
 import blobs.client.received.ClientMovementRequest;
-import blobs.world.Position;
 import blobs.world.Resident;
 import blobs.world.World;
+import blobs.world.point.Cartesian;
+import blobs.world.point.Point2D;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.java_websocket.WebSocket;
@@ -26,7 +27,7 @@ public class Server extends WebSocketServer implements AutoCloseable {
     private final World world;
     private final Map<WebSocket, Resident> residents;
     private final ScheduledExecutorService scheduler;
-    private final Map<WebSocket, Position> speed;
+    private final Map<WebSocket, Point2D> speed;
 
     public Server(InetSocketAddress inetSocketAddress) {
         super(inetSocketAddress);
@@ -46,7 +47,7 @@ public class Server extends WebSocketServer implements AutoCloseable {
     private synchronized void mainLoop() {
         try {
             residents.forEach((conn, resident) -> {
-                resident.position(resident.position().add(speed.get(conn)));
+                resident.position(resident.position().asCartesian().add(speed.get(conn).asCartesian()));
             });
             residents.forEach((conn, resident) -> {
                 try {
@@ -64,7 +65,7 @@ public class Server extends WebSocketServer implements AutoCloseable {
     public synchronized void onOpen(WebSocket conn, ClientHandshake handshake) {
         System.out.println("new connection to " + conn.getRemoteSocketAddress());
         residents.put(conn, world.generateResident());
-        speed.put(conn, Position.zero);
+        speed.put(conn, Cartesian.zero);
     }
 
     @Override
@@ -79,7 +80,7 @@ public class Server extends WebSocketServer implements AutoCloseable {
         try {
             ClientMovementRequest clientMovementRequest = mapper.readValue(message, ClientMovementRequest.class);
             System.out.println(clientMovementRequest);
-            speed.put(conn, Position.polar(clientMovementRequest.angle(), clientMovementRequest.strength()).multiply(0.01));
+            speed.put(conn, clientMovementRequest.toPoint().multiply(0.01));
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }

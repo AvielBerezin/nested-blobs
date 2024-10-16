@@ -1,5 +1,8 @@
 package blobs.world;
 
+import blobs.world.point.Cartesian;
+import blobs.world.point.Point2D;
+
 import java.util.ListIterator;
 
 public final class Resident extends Blob {
@@ -9,7 +12,7 @@ public final class Resident extends Blob {
 
     public Resident(World world,
                     Blob home,
-                    Position position,
+                    Point2D position,
                     double r) {
         super(position, r);
         this.world = world;
@@ -27,7 +30,7 @@ public final class Resident extends Blob {
         home.residents().add(this);
         this.residency = home.residents().listIterator(home.residents().size() - 1);
         this.r(leftHome.r() * r());
-        position(leftHome.position().add(position().multiply(leftHome.r())));
+        position(leftHome.position().asCartesian().add(position().multiply(leftHome.r()).asCartesian()));
     }
 
     @Override
@@ -38,10 +41,11 @@ public final class Resident extends Blob {
             blob = blob.home();
             lvl++;
         }
+        Cartesian cartesian = position().asCartesian();
         return "Resident[" +
                "lvl=" + lvl + ", " +
-               "x=" + position().x() + ", " +
-               "y=" + position().y() + ", " +
+               "x=" + cartesian.x() + ", " +
+               "y=" + cartesian.y() + ", " +
                "r=" + r() + ']';
     }
 
