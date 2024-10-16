@@ -48,6 +48,9 @@ public class Server extends WebSocketServer implements AutoCloseable {
         try {
             residents.forEach((conn, resident) -> {
                 resident.position(resident.position().asCartesian().add(speed.get(conn).asCartesian()));
+                resident.position(resident.position()
+                                          .multiply(Math.max(0, Math.min(1, 1 / (resident.position().asPolar().distance() + resident.r()))))
+                                          .asCartesian());
             });
             residents.forEach((conn, resident) -> {
                 try {
