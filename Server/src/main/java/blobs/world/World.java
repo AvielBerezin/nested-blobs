@@ -33,7 +33,7 @@ public class World extends Blob {
             position = Polar.randomInCircle(random).multiply(1 - r);
             Point2D finalPosition = position;
             if (blob.residents().stream().noneMatch(resident -> {
-                Cartesian displacement = resident.position().add(finalPosition.negate().asCartesian());
+                Cartesian displacement = resident.position().asCartesian().add(finalPosition.negate().asCartesian());
                 double sr = resident.r() + r;
                 return displacement.squared() < sr * sr;
             })) {
