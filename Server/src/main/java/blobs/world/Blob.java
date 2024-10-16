@@ -64,7 +64,7 @@ public abstract class Blob {
 
             @Override
             public PivotedBlobViewHome home() {
-                if (Blob.this.home() == Blob.this.home().home()) {
+                if (Blob.this == Blob.this.home()) {
                     return PivotedBlobViewHome.empty();
                 }
                 return PivotedBlobViewHome.home(Blob.this.home()
