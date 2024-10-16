@@ -1,6 +1,7 @@
 package blobs.server;
 
 import blobs.client.received.ClientMovementRequest;
+import blobs.world.Position;
 import blobs.world.Resident;
 import blobs.world.World;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -25,8 +26,7 @@ public class Server extends WebSocketServer implements AutoCloseable {
     private final World world;
     private final Map<WebSocket, Resident> residents;
     private final ScheduledExecutorService scheduler;
-    private final Map<WebSocket, Double> xSpeed;
-    private final Map<WebSocket, Double> ySpeed;
+    private final Map<WebSocket, Position> speed;
 
     public Server(InetSocketAddress inetSocketAddress) {
         super(inetSocketAddress);
@@ -40,15 +40,13 @@ public class Server extends WebSocketServer implements AutoCloseable {
                                       0,
                                       1000 / 30,
                                       TimeUnit.MILLISECONDS);
-        xSpeed = new HashMap<>();
-        ySpeed = new HashMap<>();
+        speed = new HashMap<>();
     }
 
     private synchronized void mainLoop() {
         try {
             residents.forEach((conn, resident) -> {
-                resident.x(resident.x() + xSpeed.get(conn));
-                resident.y(resident.y() + ySpeed.get(conn));
+                resident.position(resident.position().add(speed.get(conn)));
             });
             residents.forEach((conn, resident) -> {
                 try {
@@ -66,16 +64,14 @@ public class Server extends WebSocketServer implements AutoCloseable {
     public synchronized void onOpen(WebSocket conn, ClientHandshake handshake) {
         System.out.println("new connection to " + conn.getRemoteSocketAddress());
         residents.put(conn, world.generateResident());
-        xSpeed.put(conn, 0d);
-        ySpeed.put(conn, 0d);
+        speed.put(conn, Position.zero);
     }
 
     @Override
     public synchronized void onClose(WebSocket conn, int code, String reason, boolean remote) {
         System.out.println("closed " + conn.getRemoteSocketAddress() + " with exit code " + code + " additional info: " + reason);
         residents.remove(conn);
-        xSpeed.remove(conn);
-        ySpeed.remove(conn);
+        speed.remove(conn);
     }
 
     @Override
@@ -83,8 +79,7 @@ public class Server extends WebSocketServer implements AutoCloseable {
         try {
             ClientMovementRequest clientMovementRequest = mapper.readValue(message, ClientMovementRequest.class);
             System.out.println(clientMovementRequest);
-            xSpeed.put(conn, 0.03 * Math.cos(clientMovementRequest.angle()) * clientMovementRequest.strength());
-            ySpeed.put(conn, 0.03 * Math.sin(clientMovementRequest.angle()) * clientMovementRequest.strength());
+            speed.put(conn, Position.polar(clientMovementRequest.angle(), clientMovementRequest.strength()).multiply(0.01));
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }

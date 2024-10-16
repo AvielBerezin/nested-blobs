@@ -2,39 +2,55 @@ package blobs.world;
 
 import blobs.utils.IterableMap;
 
+import java.util.LinkedList;
 import java.util.List;
 
-public interface Blob {
-    World world();
+public abstract class Blob {
+    private final List<Resident> residents;
+    private Position position;
+    private double r;
 
-    Blob home();
+    protected Blob() {
+        this(Position.zero, 1);
+    }
 
-    double x();
+    protected Blob(Position position, double r) {
+        this.residents = new LinkedList<>();
+        this.position = position;
+        this.r = r;
+    }
 
-    double y();
+    public abstract World world();
 
-    double r();
+    public abstract Blob home();
 
-    void home(Blob home);
+    public Position position() {
+        return position;
+    }
 
-    void x(double x);
+    public double r() {
+        return r;
+    }
 
-    void y(double y);
+    public void position(Position position) {
+        this.position = position;
+    }
 
-    void r(double r);
+    public void r(double r) {
+        this.r = r;
+    }
 
-    List<Resident> residents();
+    public abstract void home(Blob home);
 
-    default PivotedBlobView pivoted() {
+    public List<Resident> residents() {
+        return residents;
+    }
+
+    public PivotedBlobView pivoted() {
         return new PivotedBlobView() {
             @Override
-            public double x() {
-                return 0;
-            }
-
-            @Override
-            public double y() {
-                return 0;
+            public Position position() {
+                return Position.zero;
             }
 
             @Override
@@ -49,8 +65,7 @@ public interface Blob {
                 }
                 return PivotedBlobViewHome.home(Blob.this.home()
                                                          .pivoted()
-                                                         .offsetX(-Blob.this.x())
-                                                         .offsetY(-Blob.this.y())
+                                                         .offset(position().negate())
                                                          .scale(1 / Blob.this.r()));
             }
 
@@ -59,8 +74,7 @@ public interface Blob {
                 return IterableMap.of(Blob.this.residents(), resident ->
                         resident.pivoted()
                                 .scale(resident.r())
-                                .offsetX(resident.x())
-                                .offsetY(resident.y()));
+                                .offset(resident.position()));
             }
         };
     }

@@ -9,50 +9,28 @@ import java.util.LinkedList;
 import java.util.List;
 
 public interface PivotedBlobView {
-    double x();
-    double y();
+    Position position();
     double r();
     PivotedBlobViewHome home();
     Iterable<PivotedBlobView> residents();
 
-    default PivotedBlobView offsetX(double offset) {
+    default PivotedBlobView offset(Position offset) {
         return new PivotedBlobViewWrap(this) {
             @Override
-            public double x() {
-                return super.x() + offset;
+            public Position position() {
+                return super.position().add(offset);
             }
 
             @Override
             public PivotedBlobViewHome home() {
                 return super.home().dispatch(PivotedBlobViewHomeDispatcher.init()
                                                                           .<PivotedBlobViewHome>withEmpty(empty -> empty)
-                                                                          .withHome(home -> PivotedBlobViewHome.home(home.get().offsetX(offset))));
+                                                                          .withHome(home -> PivotedBlobViewHome.home(home.get().offset(offset))));
             }
 
             @Override
             public Iterable<PivotedBlobView> residents() {
-                return IterableMap.of(super.residents(), resident -> resident.offsetX(offset));
-            }
-        };
-    }
-
-    default PivotedBlobView offsetY(double offset) {
-        return new PivotedBlobViewWrap(this) {
-            @Override
-            public double y() {
-                return super.y() + offset;
-            }
-
-            @Override
-            public PivotedBlobViewHome home() {
-                return super.home().dispatch(PivotedBlobViewHomeDispatcher.init()
-                                                                          .<PivotedBlobViewHome>withEmpty(empty -> empty)
-                                                                          .withHome(home -> PivotedBlobViewHome.home(home.get().offsetY(offset))));
-            }
-
-            @Override
-            public Iterable<PivotedBlobView> residents() {
-                return IterableMap.of(super.residents(), resident -> resident.offsetY(offset));
+                return IterableMap.of(super.residents(), resident -> resident.offset(offset));
             }
         };
     }
@@ -60,13 +38,8 @@ public interface PivotedBlobView {
     default PivotedBlobView scale(double factor) {
         return new PivotedBlobViewWrap(this) {
             @Override
-            public double x() {
-                return super.x() * factor;
-            }
-
-            @Override
-            public double y() {
-                return super.y() * factor;
+            public Position position() {
+                return super.position().multiply(factor);
             }
 
             @Override
@@ -95,7 +68,7 @@ public interface PivotedBlobView {
     }
 
     default ClientBlob clientBlob() {
-        return new ClientBlob(x(), y(), r());
+        return new ClientBlob(position().x(), position().y(), r());
     }
 
     default ClientView clientView(double radius) {
@@ -103,11 +76,10 @@ public interface PivotedBlobView {
     }
 
     default List<ClientBlob> clientBlobsInView(double viewWindowRadius) {
-        double x = x();
-        double y = y();
+        Position position = position();
         double r = r();
         double sr = r + viewWindowRadius;
-        if (x * x + y * y > sr * sr) {
+        if (position.squared() > sr * sr) {
             return Collections.emptyList();
         }
         List<ClientBlob> result = new LinkedList<>();
@@ -126,13 +98,8 @@ public interface PivotedBlobView {
         }
 
         @Override
-        public double x() {
-            return pivotedBlobView.x();
-        }
-
-        @Override
-        public double y() {
-            return pivotedBlobView.y();
+        public Position position() {
+            return pivotedBlobView.position();
         }
 
         @Override
