@@ -9,16 +9,16 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-public class Game {
+public class BlobsPhysicsManager {
     private final World world;
     private final SocketPlayerManager socketPlayerManager;
 
-    public Game(SocketPlayerManager socketPlayerManager, World world) {
+    public BlobsPhysicsManager(SocketPlayerManager socketPlayerManager, World world) {
         this.world = world;
         this.socketPlayerManager = socketPlayerManager;
     }
 
-    public void mainLoop() throws Exception {
+    public void step() throws Exception {
         try {
             moveEveryone();
             feeding();

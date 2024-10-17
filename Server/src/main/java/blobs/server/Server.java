@@ -17,7 +17,7 @@ import java.util.Random;
 import java.util.concurrent.*;
 
 public class Server extends WebSocketServer implements AutoCloseable {
-    private final Game game;
+    private final BlobsPhysicsManager game;
     private final ScheduledExecutorService scheduler;
     private final SocketPlayerManager socketPlayerManager;
 
@@ -25,11 +25,11 @@ public class Server extends WebSocketServer implements AutoCloseable {
         super(inetSocketAddress);
         World world = new World(new Random(0));
         socketPlayerManager = new SocketPlayerManager(world);
-        game = new Game(socketPlayerManager, world);
+        game = new BlobsPhysicsManager(socketPlayerManager, world);
         scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(() -> {
                                           try {
-                                              game.mainLoop();
+                                              game.step();
                                           } catch (Exception e) {
                                               e.printStackTrace();
                                               try {
