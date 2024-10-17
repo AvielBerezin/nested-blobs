@@ -122,7 +122,7 @@ public class Server extends WebSocketServer implements AutoCloseable {
         LinkedList<WebSocket> closed = new LinkedList<>();
         residents.forEach((conn, resident) -> {
             try {
-                conn.send(mapper.writeValueAsString(resident.pivoted().world().clientView(8)));
+                conn.send(mapper.writeValueAsString(resident.pivoted().clientView(8)));
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             } catch (WebsocketNotConnectedException e) {
