@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Function;
 
 public class World extends Blob {
     private final List<Blob> all = new ArrayList<>(256);
@@ -48,8 +49,18 @@ public class World extends Blob {
     }
 
     @Override
+    public <Res> Res dispatch(Function<World, Res> onWorld, Function<Resident, Res> onResident) {
+        return onWorld.apply(this);
+    }
+
+    @Override
     public Optional<Blob> home() {
         return Optional.empty();
+    }
+
+    @Override
+    public int level() {
+        return 0;
     }
 
     public List<Blob> all() {

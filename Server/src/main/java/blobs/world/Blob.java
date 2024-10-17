@@ -7,6 +7,7 @@ import blobs.world.point.Point2D;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 public abstract class Blob {
     private final List<Resident> residents;
@@ -22,6 +23,9 @@ public abstract class Blob {
         this.position = position;
         this.r = r;
     }
+
+    public abstract <Res> Res dispatch(Function<World, Res> onWorld,
+                                       Function<Resident, Res> onResident);
 
     public abstract Optional<Blob> home();
 
@@ -49,17 +53,7 @@ public abstract class Blob {
         return new PivotedBlobViewPivot();
     }
 
-    public int level() {
-        int lvl = 0;
-        Blob blob = this;
-        while (true) {
-            Optional<Blob> home = blob.home();
-            if (home.isEmpty()) break;
-            blob = home.get();
-            lvl++;
-        }
-        return lvl;
-    }
+    public abstract int level();
 
     protected String nestedToString() {
         return toString();

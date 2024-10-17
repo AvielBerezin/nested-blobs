@@ -5,6 +5,7 @@ import blobs.world.point.Point2D;
 
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.function.Function;
 
 public final class Resident extends Blob {
     private final World world;
@@ -65,6 +66,8 @@ public final class Resident extends Blob {
         home().ifPresent(home -> home.residents().add(this));
         leftHome.ifPresent(home -> this.r(home.r() * r()));
         leftHome.ifPresent(home -> position(home.position().asCartesian().add(position().multiply(home.r()).asCartesian())));
+        leftHome.flatMap(home -> home.dispatch(world -> Optional.empty(), Optional::of))
+                .ifPresent(resident -> resident.resize(Math.sqrt(resident.r() * resident.r() - this.r() * this.r())));
     }
 
     private static int counter = 0;
@@ -85,8 +88,26 @@ public final class Resident extends Blob {
     }
 
     @Override
+    public <Res> Res dispatch(Function<World, Res> onWorld, Function<Resident, Res> onResident) {
+        return onResident.apply(this);
+    }
+
+    @Override
     public Optional<Blob> home() {
         return Optional.ofNullable(home);
+    }
+
+    @Override
+    public int level() {
+        int lvl = 0;
+        Blob blob = this;
+        while (true) {
+            Optional<Blob> home = blob.home();
+            if (home.isEmpty()) break;
+            blob = home.get();
+            lvl++;
+        }
+        return lvl;
     }
 
     public boolean encloses(Resident food) {
