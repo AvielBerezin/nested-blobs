@@ -82,4 +82,18 @@ public abstract class Blob {
             }
         };
     }
+
+    public int level() {
+        int lvl = 0;
+        Blob blob = this;
+        while (blob != home()) {
+            blob = home();
+            lvl++;
+        }
+        return lvl;
+    }
+
+    protected String nestedToString() {
+        return toString();
+    }
 }

@@ -3,6 +3,8 @@ package blobs.world;
 import blobs.world.point.Cartesian;
 import blobs.world.point.Point2D;
 
+import java.util.ArrayList;
+
 public final class Resident extends Blob {
     private final World world;
     private final int id;
@@ -27,20 +29,34 @@ public final class Resident extends Blob {
                                        " with %s::%s eating %s::%s".formatted(this.home, this,
                                                                               food.home(), food));
         }
+        String thisDescription = this.nestedToString();
+        String foodDescription = food.nestedToString();
+        double newSize = Math.sqrt(r() * r() + food.r() * food.r());
+        swallow(food);
+        food.detach();
+        resize(newSize);
+        String eatenDescription = food.nestedToString();
+        System.out.println(thisDescription + " ate " + foodDescription + " into " + eatenDescription);
+    }
+
+    private void swallow(Resident food) {
+        food.home.residents().remove(food);
         food.home = this;
-        this.home.residents().remove(food);
+        food.home.residents().add(food);
         food.position(food.position().asCartesian().add(this.position().negate().asCartesian()));
-        double foodR = food.r();
+        food.r(food.r() / r());
+    }
+
+    private void resize(double newRadius) {
         double initialR = r();
-        food.r(foodR / initialR);
-        food.residents().forEach(Resident::leaveHome);
-        r(Math.sqrt(initialR * initialR + foodR * foodR));
+        r(newRadius);
         residents().forEach(resident -> resident.position(resident.position().asCartesian().multiply(initialR / r())));
     }
 
     public void leaveHome() {
         Blob leftHome = home();
         this.home = home.home();
+        leftHome.residents().remove(this);
         home.residents().add(this);
         this.r(leftHome.r() * r());
         position(leftHome.position().asCartesian().add(position().multiply(leftHome.r()).asCartesian()));
@@ -50,18 +66,17 @@ public final class Resident extends Blob {
 
     @Override
     public String toString() {
-        int lvl = 0;
-        Blob blob = this;
-        while (blob != blob.home()) {
-            blob = blob.home();
-            lvl++;
-        }
         Cartesian cartesian = position().asCartesian();
         return "Resident(" + id + ")[" +
-               "lvl=" + lvl + ", " +
+               "lvl=" + level() + ", " +
                "x=" + cartesian.x() + ", " +
                "y=" + cartesian.y() + ", " +
                "r=" + r() + ']';
+    }
+
+    @Override
+    public String nestedToString() {
+        return (home() != this ? (home().nestedToString() + "::") : "") + "Resident(" + id + ")";
     }
 
     @Override
@@ -82,5 +97,13 @@ public final class Resident extends Blob {
     public boolean encloses(Resident food) {
         double dr = r() - food.r();
         return position().asCartesian().add(food.position().negate().asCartesian()).squared() < dr * dr;
+    }
+
+    public void detach() {
+        new ArrayList<>(residents()).forEach(Resident::leaveHome);
+        this.world.all().remove(this);
+        this.world.allResidents().remove(this);
+        this.home.residents().remove(this);
+        this.home = this;
     }
 }

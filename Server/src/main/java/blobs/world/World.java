@@ -26,21 +26,23 @@ public class World extends Blob {
     }
 
     public Resident generateResident() {
-        Blob blob = all.get(random.nextInt(all().size()));
-        double r = random.nextDouble(0.1, 0.3);
+        Blob blob;
         Point2D position;
+        double r;
         while (true) {
+            blob = all.get(random.nextInt(all().size()));
+            r = random.nextDouble(0.1, 0.3);
             position = Polar.randomInCircle(random).multiply(1 - r);
             Point2D finalPosition = position;
+            double finalR = r;
             if (blob.residents().stream().noneMatch(resident -> {
                 Cartesian displacement = resident.position().asCartesian().add(finalPosition.negate().asCartesian());
-                double sr = resident.r() + r;
+                double sr = resident.r() + finalR;
                 return displacement.squared() < sr * sr;
             })) {
                 break;
             }
         }
-
         return new Resident(this, blob, position, r);
     }
 
