@@ -1,13 +1,20 @@
 package blobs.world;
 
+import blobs.client.sent.ClientBlob;
+import blobs.client.sent.ClientView;
 import blobs.utils.IterableMap;
 import blobs.world.pivoted.PivotedBlobView;
 import blobs.world.pivoted.PivotedBlobViewHome;
+import blobs.world.pivoted.PivotedBlobViewHomeDispatcher;
 import blobs.world.point.Cartesian;
 import blobs.world.point.Point2D;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class Blob {
     private final List<Resident> residents;
@@ -51,36 +58,7 @@ public abstract class Blob {
     }
 
     public PivotedBlobView pivoted() {
-        return new PivotedBlobView() {
-            @Override
-            public Cartesian position() {
-                return Cartesian.zero;
-            }
-
-            @Override
-            public double r() {
-                return 1;
-            }
-
-            @Override
-            public PivotedBlobViewHome home() {
-                if (Blob.this == Blob.this.home()) {
-                    return PivotedBlobViewHome.empty();
-                }
-                return PivotedBlobViewHome.home(Blob.this.home()
-                                                         .pivoted()
-                                                         .offset(Blob.this.position().negate().asCartesian())
-                                                         .scale(1 / Blob.this.r()));
-            }
-
-            @Override
-            public Iterable<PivotedBlobView> residents() {
-                return IterableMap.of(Blob.this.residents(), resident ->
-                        resident.pivoted()
-                                .scale(resident.r())
-                                .offset(resident.position().asCartesian()));
-            }
-        };
+        return new PivotedBlobViewPivot();
     }
 
     public int level() {
@@ -95,5 +73,41 @@ public abstract class Blob {
 
     protected String nestedToString() {
         return toString();
+    }
+
+    private class PivotedBlobViewPivot implements PivotedBlobView {
+        @Override
+        public Blob source() {
+            return Blob.this;
+        }
+
+        @Override
+        public Cartesian position() {
+            return Cartesian.zero;
+        }
+
+        @Override
+        public double r() {
+            return 1;
+        }
+
+        @Override
+        public PivotedBlobViewHome home() {
+            if (Blob.this == Blob.this.home()) {
+                return PivotedBlobViewHome.empty();
+            }
+            return PivotedBlobViewHome.home(Blob.this.home()
+                                                     .pivoted()
+                                                     .offset(Blob.this.position().negate().asCartesian())
+                                                     .scale(1 / Blob.this.r()));
+        }
+
+        @Override
+        public Iterable<PivotedBlobView> residents() {
+            return IterableMap.of(Blob.this.residents(), resident ->
+                    resident.pivoted()
+                            .scale(resident.r())
+                            .offset(resident.position().asCartesian()));
+        }
     }
 }

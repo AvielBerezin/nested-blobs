@@ -3,13 +3,15 @@ package blobs.world.pivoted;
 import blobs.client.sent.ClientBlob;
 import blobs.client.sent.ClientView;
 import blobs.utils.IterableMap;
+import blobs.world.Blob;
 import blobs.world.point.Cartesian;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public interface PivotedBlobView {
+    Blob source();
     Cartesian position();
     double r();
     PivotedBlobViewHome home();
@@ -72,11 +74,48 @@ public interface PivotedBlobView {
         return new ClientBlob(position().x(), position().y(), r());
     }
 
-    default ClientView clientView(double radius) {
-        return new ClientView(radius, clientBlobsInView(radius));
+    default ClientView clientView(double windowRadius) {
+        LinkedList<ClientBlob> result = new LinkedList<>();
+        ArrayList<PivotedBlobView> safeRoute = getSafeRoute();
+        for (int i = 0; i < safeRoute.size(); i++) {
+            PivotedBlobView step = safeRoute.get(i);
+            double sr = step.r() + windowRadius;
+            if (step.position().squared() <= sr * sr) {
+                result.add(step.clientBlob());
+            }
+            for (PivotedBlobView subStep : step.residents()) {
+                if (i + 1 == getSafeRoute().size() ||
+                    subStep.source() != safeRoute.get(i + 1).source()) {
+                    result.addAll(subStep.clientBlobsInViewDownwards(windowRadius));
+                }
+            }
+        }
+        return new ClientView(windowRadius, result);
     }
 
-    default List<ClientBlob> clientBlobsInView(double viewWindowRadius) {
+    private ArrayList<PivotedBlobView> getSafeRoute() {
+        LinkedList<PivotedBlobView> safeRoute = new LinkedList<>();
+        AtomicReference<PivotedBlobView> blob = new AtomicReference<>(this);
+        AtomicBoolean done = new AtomicBoolean(false);
+        do {
+            safeRoute.add(blob.get());
+            blob.get()
+                .home()
+                .dispatch(PivotedBlobViewHomeDispatcher.init()
+                                                       .<Runnable>withEmpty(emptyIgnored -> () -> done.set(true))
+                                                       .withHome(homeIgnored -> () -> blob.set(homeIgnored.get())))
+                .run();
+
+        } while (!done.get());
+        ArrayList<PivotedBlobView> result = new ArrayList<>(safeRoute.size());
+        ListIterator<PivotedBlobView> iterator = safeRoute.listIterator(safeRoute.size());
+        while (iterator.hasPrevious()) {
+            result.add(iterator.previous());
+        }
+        return result;
+    }
+
+    private List<ClientBlob> clientBlobsInViewDownwards(double viewWindowRadius) {
         Cartesian position = position();
         double r = r();
         double sr = r + viewWindowRadius;
@@ -86,7 +125,7 @@ public interface PivotedBlobView {
         List<ClientBlob> result = new LinkedList<>();
         result.add(clientBlob());
         for (PivotedBlobView resident : residents()) {
-            result.addAll(resident.clientBlobsInView(viewWindowRadius));
+            result.addAll(resident.clientBlobsInViewDownwards(viewWindowRadius));
         }
         return result;
     }
@@ -96,6 +135,11 @@ public interface PivotedBlobView {
 
         public PivotedBlobViewWrap(PivotedBlobView delegate) {
             pivotedBlobView = delegate;
+        }
+
+        @Override
+        public Blob source() {
+            return pivotedBlobView.source();
         }
 
         @Override
