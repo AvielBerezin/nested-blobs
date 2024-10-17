@@ -83,7 +83,7 @@ public class SocketPlayerManager {
 
     public SocketPlayer generatePlayer(WebSocket conn) {
         synchronized (world) {
-            SocketPlayer player = new SocketPlayer(this.world.generateResident(() -> initiateEatenClose(players().get(conn))), conn);
+            SocketPlayer player = new SocketPlayer(this.world.generateResident(true, () -> initiateEatenClose(players().get(conn))), conn);
             players().put(conn, player);
             return player;
         }

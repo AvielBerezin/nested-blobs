@@ -20,7 +20,7 @@ function linearMap(x0, x1, x, y0, y1) {
 
 socket.onmessage = (event) => {
     const view = JSON.parse(event.data);
-    const { radius, blobs } = view;
+    const { radius, player, blobs } = view;
     var first = true;
     // add the layer to the stage
     var newLayer = new Konva.Layer();
@@ -29,12 +29,21 @@ socket.onmessage = (event) => {
             x: stage.width() / 2 + blob.x * size / radius / 2,
             y: stage.height() / 2 + blob.y * size / radius / 2,
             radius: blob.r * size / radius / 2,
-            fill: 'red',
+            fill: blob.human ? 'red' : 'yellow',
             stroke: 'black',
             strokeWidth: 4 * Math.min(1, 5 * blob.r),
             opacity: Math.min(1, Math.max(0.05, linearMap(1, radius, blob.r, 0.6, 0.3))),
         }));
     });
+    newLayer.add(new Konva.Circle({
+        x: stage.width() / 2 + player.x * size / radius / 2,
+        y: stage.height() / 2 + player.y * size / radius / 2,
+        radius: player.r * size / radius / 2,
+        fill: 'green',
+        stroke: 'black',
+        strokeWidth: 4 * Math.min(1, 5 * player.r),
+        opacity: Math.min(1, Math.max(0.05, linearMap(1, radius, player.r, 0.6, 0.3))),
+    }));
     layer.destroy();
     stage.add(newLayer);
     layer = newLayer;

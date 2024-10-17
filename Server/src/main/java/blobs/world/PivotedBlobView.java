@@ -9,14 +9,21 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public interface PivotedBlobView {
-    Blob source();
-    Cartesian position();
-    double r();
-    Optional<PivotedBlobView> home();
-    Iterable<PivotedBlobView> residents();
+public abstract class PivotedBlobView {
 
-    default PivotedBlobView offset(Cartesian offset) {
+    private final boolean isHuman;
+
+    public PivotedBlobView(boolean isHuman) {
+        this.isHuman = isHuman;
+    }
+
+    public abstract Blob source();
+    public abstract Cartesian position();
+    public abstract double r();
+    public abstract Optional<PivotedBlobView> home();
+    public abstract Iterable<PivotedBlobView> residents();
+
+    public PivotedBlobView offset(Cartesian offset) {
         return new PivotedBlobViewWrap(this) {
             @Override
             public Cartesian position() {
@@ -35,7 +42,7 @@ public interface PivotedBlobView {
         };
     }
 
-    default PivotedBlobView scale(double factor) {
+    public PivotedBlobView scale(double factor) {
         return new PivotedBlobViewWrap(this) {
             @Override
             public Cartesian position() {
@@ -59,34 +66,35 @@ public interface PivotedBlobView {
         };
     }
 
-    default PivotedBlobView world() {
+    public PivotedBlobView world() {
         return home().map(PivotedBlobView::world).orElse(this);
     }
 
-    default ClientBlob clientBlob() {
-        return new ClientBlob(position().x(), position().y(), r());
+    private ClientBlob clientBlob() {
+        return new ClientBlob(position().x(), position().y(), r(), isHuman);
     }
 
-    default ClientView clientView(double windowRadius) {
+    public ClientView clientView(double windowRadius) {
         LinkedList<ClientBlob> result = new LinkedList<>();
         ArrayList<PivotedBlobView> safeRoute = getSafeRoute();
-        for (int i = 0; i < safeRoute.size(); i++) {
+        for (int i = 0; i < safeRoute.size() - 1; i++) {
             PivotedBlobView step = safeRoute.get(i);
             double sr = step.r() + windowRadius;
             if (step.position().squared() <= sr * sr) {
                 result.add(step.clientBlob());
             }
             for (PivotedBlobView subStep : step.residents()) {
-                if (i + 1 == getSafeRoute().size() ||
-                    subStep.source() != safeRoute.get(i + 1).source()) {
+                if (subStep.source() != safeRoute.get(i + 1).source()) {
                     result.addAll(subStep.clientBlobsInViewDownwards(windowRadius));
                 }
             }
         }
-        return new ClientView(windowRadius, result);
+        List<ClientBlob> blobsFromPivot = safeRoute.get(safeRoute.size() - 1).clientBlobsInViewDownwards(windowRadius);
+        result.addAll(blobsFromPivot.subList(1, blobsFromPivot.size()));
+        return new ClientView(windowRadius, blobsFromPivot.get(0), result);
     }
 
-    private ArrayList<PivotedBlobView> getSafeRoute() {
+    public ArrayList<PivotedBlobView> getSafeRoute() {
         LinkedList<PivotedBlobView> safeRoute = new LinkedList<>();
         AtomicReference<PivotedBlobView> blob = new AtomicReference<>(this);
         AtomicBoolean done = new AtomicBoolean(false);
@@ -103,7 +111,7 @@ public interface PivotedBlobView {
         return result;
     }
 
-    private List<ClientBlob> clientBlobsInViewDownwards(double viewWindowRadius) {
+    public List<ClientBlob> clientBlobsInViewDownwards(double viewWindowRadius) {
         Cartesian position = position();
         double r = r();
         double sr = r + viewWindowRadius;
@@ -118,10 +126,11 @@ public interface PivotedBlobView {
         return result;
     }
 
-    class PivotedBlobViewWrap implements PivotedBlobView {
+    public static class PivotedBlobViewWrap extends PivotedBlobView {
         private final PivotedBlobView pivotedBlobView;
 
         public PivotedBlobViewWrap(PivotedBlobView delegate) {
+            super(delegate.isHuman);
             pivotedBlobView = delegate;
         }
 

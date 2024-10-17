@@ -17,8 +17,9 @@ public final class Resident extends Blob {
                     Blob home,
                     Point2D position,
                     double r,
+                    boolean isHuman,
                     Runnable onBeingEaten) {
-        super(position, r);
+        super(position, r, isHuman);
         this.world = world;
         this.home = home;
         world.all().add(this);

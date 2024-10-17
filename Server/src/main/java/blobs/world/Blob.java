@@ -10,18 +10,20 @@ import java.util.Optional;
 import java.util.function.Function;
 
 public abstract class Blob {
+    private final boolean isHuman;
     private final List<Resident> residents;
     private Point2D position;
     private double r;
 
     protected Blob() {
-        this(Cartesian.zero, 1);
+        this(Cartesian.zero, 1, false);
     }
 
-    protected Blob(Point2D position, double r) {
+    protected Blob(Point2D position, double r, boolean isHuman) {
         this.residents = new LinkedList<>();
         this.position = position;
         this.r = r;
+        this.isHuman = isHuman;
     }
 
     public abstract <Res> Res dispatch(Function<World, Res> onWorld,
@@ -59,7 +61,11 @@ public abstract class Blob {
         return toString();
     }
 
-    private class PivotedBlobViewPivot implements PivotedBlobView {
+    private class PivotedBlobViewPivot extends PivotedBlobView {
+        private PivotedBlobViewPivot() {
+            super(isHuman);
+        }
+
         @Override
         public Blob source() {
             return Blob.this;

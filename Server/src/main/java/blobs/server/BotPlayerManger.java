@@ -34,7 +34,7 @@ public class BotPlayerManger implements AutoCloseable {
 
     public void generateBot() {
         AtomicReference<BotPlayer> playerBox = new AtomicReference<>();
-        BotPlayer player = new BotPlayer(world.generateResident(() -> all.remove(playerBox.get())));
+        BotPlayer player = new BotPlayer(world.generateResident(false, () -> all.remove(playerBox.get())));
         playerBox.set(player);
         all.add(player);
         player.randomizeAcceleration(random);

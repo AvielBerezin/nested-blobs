@@ -27,7 +27,7 @@ public class World extends Blob {
         return "World";
     }
 
-    public Resident generateResident(Runnable onBeingEaten) {
+    public Resident generateResident(boolean isHuman, Runnable onBeingEaten) {
         Blob blob = world;
         Cirle circle;
         mainLoop: while (true) {
@@ -41,7 +41,7 @@ public class World extends Blob {
                 }
             }
         }
-        return new Resident(this, blob, circle.position(), circle.r(), onBeingEaten);
+        return new Resident(this, blob, circle.position(), circle.r(), isHuman, onBeingEaten);
     }
 
     private Optional<Cirle> tryGenerateCircle(Blob blob) {
