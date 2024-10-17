@@ -31,4 +31,6 @@ public class SocketPlayer {
     public void speed(Point2D speed) {
         this.speed = speed;
     }
+
+
 }
