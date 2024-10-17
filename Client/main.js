@@ -10,6 +10,14 @@ var stage = new Konva.Stage({
 var socket = new WebSocket("ws://localhost:80")
 var layer = new Konva.Layer();
 var size = 0.8 * Math.min(stage.width(), stage.height())
+
+function linearMap(x0, x1, x, y0, y1) {
+    if (x0 === x1) {
+        return y0;
+    }
+    return y0 + x * (y1 - y0) / (x1 - x0);
+}
+
 socket.onmessage = (event) => {
     const view = JSON.parse(event.data);
     const { radius, blobs } = view;
@@ -23,8 +31,8 @@ socket.onmessage = (event) => {
             radius: blob.r * size / radius / 2,
             fill: 'red',
             stroke: 'black',
-            strokeWidth: 4,
-            opacity: 0.4,
+            strokeWidth: 4 * Math.min(1, 5 * blob.r),
+            opacity: Math.min(1, Math.max(0.05, linearMap(1, radius, blob.r, 0.6, 0.3))),
         }));
     });
     layer.destroy();

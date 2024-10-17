@@ -3,11 +3,9 @@ package blobs.world;
 import blobs.world.point.Cartesian;
 import blobs.world.point.Point2D;
 
-import java.util.ListIterator;
-
 public final class Resident extends Blob {
     private final World world;
-    private ListIterator<Resident> residency;
+    private final int id;
     private Blob home;
 
     public Resident(World world,
@@ -20,18 +18,35 @@ public final class Resident extends Blob {
         world.all().add(this);
         world.allResidents().add(this);
         home.residents().add(this);
-        this.residency = this.home().residents().listIterator(this.home().residents().size() - 1);
+        id = counter++;
+    }
+
+    public void consume(Resident food) {
+        if (food.home != this.home) {
+            throw new RuntimeException("eating is only allowed between residents that share a home." +
+                                       " with %s::%s eating %s::%s".formatted(this.home, this,
+                                                                              food.home(), food));
+        }
+        food.home = this;
+        this.home.residents().remove(food);
+        food.position(food.position().asCartesian().add(this.position().negate().asCartesian()));
+        double foodR = food.r();
+        double initialR = r();
+        food.r(foodR / initialR);
+        food.residents().forEach(Resident::leaveHome);
+        r(Math.sqrt(initialR * initialR + foodR * foodR));
+        residents().forEach(resident -> resident.position(resident.position().asCartesian().multiply(initialR / r())));
     }
 
     public void leaveHome() {
         Blob leftHome = home();
         this.home = home.home();
-        residency.remove();
         home.residents().add(this);
-        this.residency = home.residents().listIterator(home.residents().size() - 1);
         this.r(leftHome.r() * r());
         position(leftHome.position().asCartesian().add(position().multiply(leftHome.r()).asCartesian()));
     }
+
+    private static int counter = 0;
 
     @Override
     public String toString() {
@@ -42,7 +57,7 @@ public final class Resident extends Blob {
             lvl++;
         }
         Cartesian cartesian = position().asCartesian();
-        return "Resident[" +
+        return "Resident(" + id + ")[" +
                "lvl=" + lvl + ", " +
                "x=" + cartesian.x() + ", " +
                "y=" + cartesian.y() + ", " +
@@ -62,5 +77,10 @@ public final class Resident extends Blob {
     @Override
     public void home(Blob home) {
         this.home = home;
+    }
+
+    public boolean encloses(Resident food) {
+        double dr = r() - food.r();
+        return position().asCartesian().add(food.position().negate().asCartesian()).squared() < dr * dr;
     }
 }

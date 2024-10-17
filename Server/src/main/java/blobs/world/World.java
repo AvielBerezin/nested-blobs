@@ -27,7 +27,7 @@ public class World extends Blob {
 
     public Resident generateResident() {
         Blob blob = all.get(random.nextInt(all().size()));
-        double r = 0.1;
+        double r = random.nextDouble(0.1, 0.3);
         Point2D position;
         while (true) {
             position = Polar.randomInCircle(random).multiply(1 - r);
