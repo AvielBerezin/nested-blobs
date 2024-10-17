@@ -14,7 +14,7 @@ public interface PivotedBlobView {
     Blob source();
     Cartesian position();
     double r();
-    PivotedBlobViewHome home();
+    Optional<PivotedBlobView> home();
     Iterable<PivotedBlobView> residents();
 
     default PivotedBlobView offset(Cartesian offset) {
@@ -25,10 +25,8 @@ public interface PivotedBlobView {
             }
 
             @Override
-            public PivotedBlobViewHome home() {
-                return super.home().dispatch(PivotedBlobViewHomeDispatcher.init()
-                                                                          .<PivotedBlobViewHome>withEmpty(empty -> empty)
-                                                                          .withHome(home -> PivotedBlobViewHome.home(home.get().offset(offset))));
+            public Optional<PivotedBlobView> home() {
+                return super.home().map(pivotedBlobView -> pivotedBlobView.offset(offset));
             }
 
             @Override
@@ -51,10 +49,8 @@ public interface PivotedBlobView {
             }
 
             @Override
-            public PivotedBlobViewHome home() {
-                return super.home().dispatch(PivotedBlobViewHomeDispatcher.init()
-                                                                          .<PivotedBlobViewHome>withEmpty(empty -> empty)
-                                                                          .withHome(home -> PivotedBlobViewHome.home(home.get().scale(factor))));
+            public Optional<PivotedBlobView> home() {
+                return super.home().map(pivotedBlobView -> pivotedBlobView.scale(factor));
             }
 
             @Override
@@ -65,9 +61,7 @@ public interface PivotedBlobView {
     }
 
     default PivotedBlobView world() {
-        return home().dispatch(PivotedBlobViewHomeDispatcher.init()
-                                                            .withEmpty(empty -> this)
-                                                            .withHome(home -> home.get().world()));
+        return home().map(PivotedBlobView::world).orElse(this);
     }
 
     default ClientBlob clientBlob() {
@@ -99,12 +93,7 @@ public interface PivotedBlobView {
         AtomicBoolean done = new AtomicBoolean(false);
         do {
             safeRoute.add(blob.get());
-            blob.get()
-                .home()
-                .dispatch(PivotedBlobViewHomeDispatcher.init()
-                                                       .<Runnable>withEmpty(emptyIgnored -> () -> done.set(true))
-                                                       .withHome(homeIgnored -> () -> blob.set(homeIgnored.get())))
-                .run();
+            blob.get().home().ifPresentOrElse(blob::set, () -> done.set(true));
 
         } while (!done.get());
         ArrayList<PivotedBlobView> result = new ArrayList<>(safeRoute.size());
@@ -153,7 +142,7 @@ public interface PivotedBlobView {
         }
 
         @Override
-        public PivotedBlobViewHome home() {
+        public Optional<PivotedBlobView> home() {
             return pivotedBlobView.home();
         }
 

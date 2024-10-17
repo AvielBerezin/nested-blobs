@@ -4,6 +4,7 @@ import blobs.world.point.Cartesian;
 import blobs.world.point.Point2D;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 public final class Resident extends Blob {
     private final World world;
@@ -16,7 +17,7 @@ public final class Resident extends Blob {
                     double r) {
         super(position, r);
         this.world = world;
-        this.home(home);
+        this.home = home;
         world.all().add(this);
         world.allResidents().add(this);
         home.residents().add(this);
@@ -24,7 +25,11 @@ public final class Resident extends Blob {
     }
 
     public void consume(Resident food) {
-        if (food.home() != this.home()) {
+        if (food.home()
+                .map(foodHome -> this.home()
+                                     .map(thisHome -> foodHome != thisHome)
+                                     .orElse(false))
+                .orElse(this.home().isPresent())) {
             throw new RuntimeException("eating is only allowed between residents that share a home." +
                                        " with %s::%s eating %s::%s".formatted(this.home(), this,
                                                                               food.home(), food));
@@ -40,9 +45,9 @@ public final class Resident extends Blob {
     }
 
     private void swallow(Resident food) {
-        food.home().residents().remove(food);
+        food.home().map(Blob::residents).ifPresent(residents -> residents.remove(food));
         food.home = this;
-        food.home().residents().add(food);
+        food.home().map(Blob::residents).ifPresent(residents -> residents.add(food));
         food.position(food.position().asCartesian().add(this.position().negate().asCartesian()));
         food.r(food.r() / r());
     }
@@ -54,12 +59,12 @@ public final class Resident extends Blob {
     }
 
     public void leaveHome() {
-        Blob leftHome = home();
-        this.home = home().home();
-        leftHome.residents().remove(this);
-        home().residents().add(this);
-        this.r(leftHome.r() * r());
-        position(leftHome.position().asCartesian().add(position().multiply(leftHome.r()).asCartesian()));
+        Optional<Blob> leftHome = home();
+        this.home = home().flatMap(Blob::home).orElse(null);
+        leftHome.ifPresent(home -> home.residents().remove(this));
+        home().ifPresent(home -> home.residents().add(this));
+        leftHome.ifPresent(home -> this.r(home.r() * r()));
+        leftHome.ifPresent(home -> position(home.position().asCartesian().add(position().multiply(home.r()).asCartesian())));
     }
 
     private static int counter = 0;
@@ -76,22 +81,12 @@ public final class Resident extends Blob {
 
     @Override
     public String nestedToString() {
-        return (home() != this ? (home().nestedToString() + "::") : "") + "Resident(" + id + ")";
+        return home().map(Blob::nestedToString).map(str -> str + "::").orElse("") + "Resident(" + id + ")";
     }
 
     @Override
-    public World world() {
-        return world;
-    }
-
-    @Override
-    public Blob home() {
-        return home;
-    }
-
-    @Override
-    public void home(Blob home) {
-        this.home = home;
+    public Optional<Blob> home() {
+        return Optional.ofNullable(home);
     }
 
     public boolean encloses(Resident food) {
@@ -103,7 +98,7 @@ public final class Resident extends Blob {
         new ArrayList<>(residents()).forEach(Resident::leaveHome);
         this.world.all().remove(this);
         this.world.allResidents().remove(this);
-        this.home().residents().remove(this);
-        this.home = this;
+        this.home().map(Blob::residents).ifPresent(residents -> residents.remove(this));
+        this.home = null;
     }
 }

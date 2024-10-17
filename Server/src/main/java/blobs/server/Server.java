@@ -112,7 +112,9 @@ public class Server extends WebSocketServer implements AutoCloseable {
             resident.position(resident.position()
                                       .multiply(Math.max(0d, Math.min(1d, 1d / Math.max(+0d, resident.position().asPolar().distance() - resident.r() + pushBack))))
                                       .asCartesian());
-            if (resident.position().asPolar().distance() > 1) {
+            if (resident.position().asPolar().distance() > 1 &&
+                resident.home().isPresent() &&
+                resident.home().get().home().isPresent()) {
                 resident.leaveHome();
             }
         });

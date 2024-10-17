@@ -2,12 +2,12 @@ package blobs.world;
 
 import blobs.utils.IterableMap;
 import blobs.world.pivoted.PivotedBlobView;
-import blobs.world.pivoted.PivotedBlobViewHome;
 import blobs.world.point.Cartesian;
 import blobs.world.point.Point2D;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 public abstract class Blob {
     private final List<Resident> residents;
@@ -24,9 +24,7 @@ public abstract class Blob {
         this.r = r;
     }
 
-    public abstract World world();
-
-    public abstract Blob home();
+    public abstract Optional<Blob> home();
 
     public Point2D position() {
         return position;
@@ -44,8 +42,6 @@ public abstract class Blob {
         this.r = r;
     }
 
-    public abstract void home(Blob home);
-
     public List<Resident> residents() {
         return residents;
     }
@@ -57,8 +53,10 @@ public abstract class Blob {
     public int level() {
         int lvl = 0;
         Blob blob = this;
-        while (blob != home()) {
-            blob = home();
+        while (true) {
+            Optional<Blob> home = blob.home();
+            if (home.isEmpty()) break;
+            blob = home.get();
             lvl++;
         }
         return lvl;
@@ -85,14 +83,10 @@ public abstract class Blob {
         }
 
         @Override
-        public PivotedBlobViewHome home() {
-            if (Blob.this == Blob.this.home()) {
-                return PivotedBlobViewHome.empty();
-            }
-            return PivotedBlobViewHome.home(Blob.this.home()
-                                                     .pivoted()
-                                                     .offset(Blob.this.position().negate().asCartesian())
-                                                     .scale(1 / Blob.this.r()));
+        public Optional<PivotedBlobView> home() {
+            return Blob.this.home().map(blob -> blob.pivoted()
+                                                    .offset(Blob.this.position().negate().asCartesian())
+                                                    .scale(1 / Blob.this.r()));
         }
 
         @Override

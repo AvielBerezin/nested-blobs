@@ -6,6 +6,7 @@ import blobs.world.point.Polar;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 public class World extends Blob {
@@ -13,11 +14,9 @@ public class World extends Blob {
     private final List<Resident> allResidents = new ArrayList<>(256);
     private final Random random;
     private final World world;
-    private Blob home;
 
     public World(Random random) {
         this.world = this;
-        this.home(this);
         all.add(this);
         this.random = random;
     }
@@ -49,18 +48,8 @@ public class World extends Blob {
     }
 
     @Override
-    public World world() {
-        return world;
-    }
-
-    @Override
-    public Blob home() {
-        return home;
-    }
-
-    @Override
-    public void home(Blob home) {
-        this.home = home;
+    public Optional<Blob> home() {
+        return Optional.empty();
     }
 
     public List<Blob> all() {
