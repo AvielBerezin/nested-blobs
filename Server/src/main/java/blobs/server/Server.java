@@ -1,6 +1,7 @@
 package blobs.server;
 
 import blobs.client.received.ClientMovementRequest;
+import blobs.world.World;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.java_websocket.WebSocket;
 import org.java_websocket.framing.CloseFrame;
@@ -12,15 +13,19 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.Random;
 import java.util.concurrent.*;
 
 public class Server extends WebSocketServer implements AutoCloseable {
     private final Game game;
     private final ScheduledExecutorService scheduler;
+    private final SocketPlayerManager socketPlayerManager;
 
     public Server(InetSocketAddress inetSocketAddress) {
         super(inetSocketAddress);
-        game = new Game();
+        World world = new World(new Random(0));
+        socketPlayerManager = new SocketPlayerManager(world);
+        game = new Game(socketPlayerManager, world);
         scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(() -> {
                                           try {
@@ -41,14 +46,14 @@ public class Server extends WebSocketServer implements AutoCloseable {
 
     @Override
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
-        System.out.println("new connection to " + conn.getRemoteSocketAddress() + " of " + game.generatePlayer(conn).blob());
+        System.out.println("new connection to " + conn.getRemoteSocketAddress() + " of " + socketPlayerManager.generatePlayer(conn).blob());
     }
 
     @Override
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
         if (remote) {
-            System.out.println("closed " + conn.getRemoteSocketAddress() + " of " + game.players().get(conn) + " with exit code " + code + " additional info: " + reason);
-            game.playerDisconnected(conn);
+            System.out.println("closed " + conn.getRemoteSocketAddress() + " of " + socketPlayerManager.players().get(conn) + " with exit code " + code + " additional info: " + reason);
+            socketPlayerManager.playerDisconnected(conn);
         }
     }
 
@@ -56,10 +61,10 @@ public class Server extends WebSocketServer implements AutoCloseable {
     public void onMessage(WebSocket conn, String message) {
         try {
             ClientMovementRequest clientMovementRequest = JSONSerializer.mapper.readValue(message, ClientMovementRequest.class);
-            game.acceptMovementRequest(conn, clientMovementRequest);
+            socketPlayerManager.acceptMovementRequest(conn, clientMovementRequest);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
-            game.initiateAbnormalClose(conn);
+            socketPlayerManager.initiateAbnormalClose(conn);
         }
     }
 
