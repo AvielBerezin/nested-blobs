@@ -27,7 +27,7 @@ public class SocketPlayerManager {
         return players;
     }
 
-    void sendBlobsData() {
+    public void sendBlobsData() {
         LinkedList<WebSocket> closed = new LinkedList<>();
         players().forEach((conn, player) -> {
             try {
@@ -43,7 +43,7 @@ public class SocketPlayerManager {
         closed.forEach(this::initiateAbnormalClose);
     }
 
-    void remove(WebSocket conn, int closeStatus) {
+    private void remove(WebSocket conn, int closeStatus) {
         Optional.ofNullable(players().remove(conn))
                 .map(SocketPlayer::blob)
                 .ifPresent(Resident::detach);
@@ -51,31 +51,41 @@ public class SocketPlayerManager {
     }
 
     public void initiateAbnormalClose(WebSocket conn) {
-        InetSocketAddress address = conn.getRemoteSocketAddress();
-        Resident resident = players().get(conn).blob();
-        remove(conn, CloseFrame.ABNORMAL_CLOSE);
-        System.out.println("server abnormally closed " + address + " of " + resident);
+        synchronized (world) {
+            InetSocketAddress address = conn.getRemoteSocketAddress();
+            Resident resident = players().get(conn).blob();
+            remove(conn, CloseFrame.ABNORMAL_CLOSE);
+            System.out.println("server abnormally closed " + address + " of " + resident);
+        }
     }
 
     public void acceptMovementRequest(WebSocket conn, ClientMovementRequest clientMovementRequest) {
-        players().get(conn).speed(clientMovementRequest.toPoint().multiply(0.01));
+        synchronized (world) {
+            players().get(conn).speed(clientMovementRequest.toPoint().multiply(0.01));
+        }
     }
 
     public void playerDisconnected(WebSocket conn) {
-        Optional.ofNullable(players().remove(conn))
-                .map(SocketPlayer::blob)
-                .ifPresent(Resident::detach);
+        synchronized (world) {
+            Optional.ofNullable(players().remove(conn))
+                    .map(SocketPlayer::blob)
+                    .ifPresent(Resident::detach);
+        }
     }
 
     public void initiateEatenClose(SocketPlayer player) {
-        Resident resident = player.blob();
-        remove(player.socket(), CloseFrame.NORMAL);
-        System.out.println("server closed " + player.socket().getRemoteSocketAddress() + " of eaten " + resident);
+        synchronized (world) {
+            Resident resident = player.blob();
+            remove(player.socket(), CloseFrame.NORMAL);
+            System.out.println("server closed " + player.socket().getRemoteSocketAddress() + " of eaten " + resident);
+        }
     }
 
     public SocketPlayer generatePlayer(WebSocket conn) {
-        SocketPlayer player = new SocketPlayer(this.world.generateResident(() -> initiateEatenClose(players().get(conn))), conn);
-        players().put(conn, player);
-        return player;
+        synchronized (world) {
+            SocketPlayer player = new SocketPlayer(this.world.generateResident(() -> initiateEatenClose(players().get(conn))), conn);
+            players().put(conn, player);
+            return player;
+        }
     }
 }

@@ -4,27 +4,44 @@ import blobs.world.Blob;
 import blobs.world.Resident;
 import blobs.world.World;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public class BlobsPhysicsManager {
     private final World world;
     private final SocketPlayerManager socketPlayerManager;
+    private final BotPlayerManger botPlayerManger;
+    private Instant lastGenerated;
 
-    public BlobsPhysicsManager(SocketPlayerManager socketPlayerManager, World world) {
+    public BlobsPhysicsManager(World world, SocketPlayerManager socketPlayerManager, BotPlayerManger botPlayerManger) {
         this.world = world;
         this.socketPlayerManager = socketPlayerManager;
+        this.botPlayerManger = botPlayerManger;
     }
 
     public void step() throws Exception {
-        try {
-            moveEveryone();
-            feeding();
-            socketPlayerManager.sendBlobsData();
-        } catch (Throwable e) {
-            throw new Exception(e);
+        synchronized (world) {
+            try {
+                botPlayerManger.updateSpeeds();
+                moveEveryone();
+                feeding();
+                socketPlayerManager.sendBlobsData();
+                if (world.all().size() < 20 &&
+                    (lastGenerated == null ||
+                     Duration.between(lastGenerated, Instant.now())
+                             .compareTo(Duration.ofSeconds(2))
+                     > 0)) {
+                    botPlayerManger.generateBot();
+                    lastGenerated = Instant.now();
+                }
+            } catch (Throwable e) {
+                throw new Exception(e);
+            }
         }
     }
 
@@ -73,7 +90,10 @@ public class BlobsPhysicsManager {
     }
 
     private void moveEveryone() {
-        socketPlayerManager.players().values().forEach(player -> {
+        LinkedList<Player> players = new LinkedList<>();
+        players.addAll(socketPlayerManager.players().values());
+        players.addAll(botPlayerManger.all());
+        players.forEach(player -> {
             Resident resident = player.blob();
             resident.position(resident.position().asCartesian().add(player.speed().asCartesian()));
             // such an f satisfies ln(f*d+1)/m = 0.5*d for d = 0.4 works

@@ -42,6 +42,14 @@ public record Polar(double angle,
         return Polar.of(angle, distance * factor);
     }
 
+    public Polar withDistance(double distance) {
+        return Polar.of(angle, distance);
+    }
+
+    public Polar withAngle(double angle) {
+        return Polar.of(angle, distance);
+    }
+
     @Override
     public <Res> Res dispatch(Point2DDispatcher<Res, Res> dispatcher) {
         return dispatcher.with(this);

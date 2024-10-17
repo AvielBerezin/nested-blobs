@@ -20,12 +20,15 @@ public class Server extends WebSocketServer implements AutoCloseable {
     private final BlobsPhysicsManager game;
     private final ScheduledExecutorService scheduler;
     private final SocketPlayerManager socketPlayerManager;
+    private final BotPlayerManger botPlayerManger;
 
     public Server(InetSocketAddress inetSocketAddress) {
         super(inetSocketAddress);
-        World world = new World(new Random(0));
+        Random random = new Random(0);
+        World world = new World(random);
         socketPlayerManager = new SocketPlayerManager(world);
-        game = new BlobsPhysicsManager(socketPlayerManager, world);
+        botPlayerManger = new BotPlayerManger(world, random);
+        game = new BlobsPhysicsManager(world, socketPlayerManager, botPlayerManger);
         scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(() -> {
                                           try {
@@ -46,13 +49,13 @@ public class Server extends WebSocketServer implements AutoCloseable {
 
     @Override
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
-        System.out.println("new connection to " + conn.getRemoteSocketAddress() + " of " + socketPlayerManager.generatePlayer(conn).blob());
+        System.out.println("new connection to " + conn.getRemoteSocketAddress() + " of " + socketPlayerManager.generatePlayer(conn).blob().nestedToString());
     }
 
     @Override
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
         if (remote) {
-            System.out.println("closed " + conn.getRemoteSocketAddress() + " of " + socketPlayerManager.players().get(conn) + " with exit code " + code + " additional info: " + reason);
+            System.out.println("closed " + conn.getRemoteSocketAddress() + " of " + socketPlayerManager.players().get(conn).blob().nestedToString() + " with exit code " + code + " additional info: " + reason);
             socketPlayerManager.playerDisconnected(conn);
         }
     }
@@ -132,6 +135,7 @@ public class Server extends WebSocketServer implements AutoCloseable {
     public void close() throws InterruptedException {
         System.out.println("stopping...");
         scheduler.close();
+        botPlayerManger.close();
         stop();
     }
 
