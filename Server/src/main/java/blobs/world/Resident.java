@@ -10,12 +10,14 @@ import java.util.function.Function;
 public final class Resident extends Blob {
     private final World world;
     private final int id;
+    private final Runnable onBeingEaten;
     private Blob home;
 
     public Resident(World world,
                     Blob home,
                     Point2D position,
-                    double r) {
+                    double r,
+                    Runnable onBeingEaten) {
         super(position, r);
         this.world = world;
         this.home = home;
@@ -23,9 +25,10 @@ public final class Resident extends Blob {
         world.allResidents().add(this);
         home.residents().add(this);
         id = counter++;
+        this.onBeingEaten = onBeingEaten;
     }
 
-    public void consume(Resident food) {
+    public void eat(Resident food) {
         if (food.home()
                 .map(foodHome -> this.home()
                                      .map(thisHome -> foodHome != thisHome)
@@ -43,6 +46,7 @@ public final class Resident extends Blob {
         resize(newSize);
         String eatenDescription = food.nestedToString();
         System.out.println(thisDescription + " ate " + foodDescription + " into " + eatenDescription);
+        food.onBeingEaten.run();
     }
 
     private void swallow(Resident food) {
@@ -121,5 +125,10 @@ public final class Resident extends Blob {
         this.world.allResidents().remove(this);
         this.home().map(Blob::residents).ifPresent(residents -> residents.remove(this));
         this.home = null;
+    }
+
+    public boolean canEat(Resident food) {
+        double radiiRatio = food.r() / r();
+        return encloses(food) && radiiRatio < 0.8;
     }
 }

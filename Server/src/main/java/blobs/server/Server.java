@@ -4,8 +4,6 @@ import blobs.client.received.ClientMovementRequest;
 import blobs.world.Blob;
 import blobs.world.Resident;
 import blobs.world.World;
-import blobs.world.point.Cartesian;
-import blobs.world.point.Point2D;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.java_websocket.WebSocket;
@@ -25,22 +23,18 @@ import java.util.concurrent.*;
 public class Server extends WebSocketServer implements AutoCloseable {
     private static final ObjectMapper mapper = new ObjectMapper();
     private final World world;
-    private final Map<WebSocket, Resident> residents;
-    private final Map<Resident, WebSocket> sockets;
+    private final Map<WebSocket, SocketPlayer> players;
     private final ScheduledExecutorService scheduler;
-    private final Map<WebSocket, Point2D> speed;
 
     public Server(InetSocketAddress inetSocketAddress) {
         super(inetSocketAddress);
         world = new World(new Random(2));
-        residents = new ConcurrentHashMap<>();
-        sockets = new HashMap<>();
+        players = new ConcurrentHashMap<>();
         scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(this::mainLoop,
                                       0,
                                       1000 / 30,
                                       TimeUnit.MILLISECONDS);
-        speed = new HashMap<>();
     }
 
     private synchronized void mainLoop() {
@@ -93,9 +87,9 @@ public class Server extends WebSocketServer implements AutoCloseable {
         boolean eaten = false;
         while (foods.hasNext()) {
             Resident food = foods.next();
-            if (isEdible(resident, food)) {
+            if (resident.canEat(food)) {
                 foods.remove();
-                eat(resident, food);
+                resident.eat(food);
                 eaten = true;
             }
         }
@@ -103,8 +97,9 @@ public class Server extends WebSocketServer implements AutoCloseable {
     }
 
     private void moveEveryone() {
-        residents.forEach((conn, resident) -> {
-            resident.position(resident.position().asCartesian().add(speed.get(conn).asCartesian()));
+        players.forEach((conn, player) -> {
+            Resident resident = player.blob();
+            resident.position(resident.position().asCartesian().add(player.speed().asCartesian()));
             // such an f satisfies ln(f*d+1)/m = 0.5*d for d = 0.4 works
             // meaning that starting with a radius of d/2 = 0.2, a blob can go halfway out of the border.
             double f = 6.28215;
@@ -122,9 +117,9 @@ public class Server extends WebSocketServer implements AutoCloseable {
 
     private void sendBlobsData() {
         LinkedList<WebSocket> closed = new LinkedList<>();
-        residents.forEach((conn, resident) -> {
+        players.forEach((conn, player) -> {
             try {
-                conn.send(mapper.writeValueAsString(resident.pivoted().clientView(8)));
+                conn.send(mapper.writeValueAsString(player.blob().pivoted().clientView(8)));
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             } catch (WebsocketNotConnectedException e) {
@@ -136,62 +131,49 @@ public class Server extends WebSocketServer implements AutoCloseable {
         closed.forEach(this::initiateAbnormalClose);
     }
 
-    private void eat(Resident resident, Resident food) {
-        resident.consume(food);
-        initiateEatenClose(sockets.get(food));
-    }
-
-    private static boolean isEdible(Resident resident, Resident food) {
-        double radiiRatio = food.r() / resident.r();
-        return resident.encloses(food) && radiiRatio < 0.8;
-    }
-
     @Override
     public synchronized void onOpen(WebSocket conn, ClientHandshake handshake) {
-        Resident resident = world.generateResident();
+        Resident resident = world.generateResident(() -> initiateEatenClose(players.get(conn).socket()));
+        SocketPlayer player = new SocketPlayer(resident, conn);
         System.out.println("new connection to " + conn.getRemoteSocketAddress() + " of " + resident);
-        residents.put(conn, resident);
-        sockets.put(resident, conn);
-        speed.put(conn, Cartesian.zero);
+        players.put(conn, player);
     }
 
     @Override
     public synchronized void onClose(WebSocket conn, int code, String reason, boolean remote) {
         if (remote) {
-            System.out.println("closed " + conn.getRemoteSocketAddress() + " of " + residents.get(conn) + " with exit code " + code + " additional info: " + reason);
+            System.out.println("closed " + conn.getRemoteSocketAddress() + " of " + players.get(conn) + " with exit code " + code + " additional info: " + reason);
             remove(conn, code);
         }
     }
 
     private void initiateAbnormalClose(WebSocket conn) {
         InetSocketAddress address = conn.getRemoteSocketAddress();
-        Resident resident = residents.get(conn);
+        Resident resident = players.get(conn).blob();
         remove(conn, CloseFrame.ABNORMAL_CLOSE);
         System.out.println("server abnormally closed " + address + " of " + resident);
     }
 
     private void initiateEatenClose(WebSocket conn) {
         InetSocketAddress address = conn.getRemoteSocketAddress();
-        Resident resident = residents.get(conn);
+        Resident resident = players.get(conn).blob();
         remove(conn, CloseFrame.NORMAL);
         System.out.println("server closed " + address + " of eaten " + resident);
     }
 
 
     private void remove(WebSocket conn, int closeStatus) {
-        Optional.ofNullable(residents.remove(conn)).ifPresent(resident -> {
-            sockets.remove(resident);
-            resident.detach();
-        });
+        Optional.ofNullable(players.remove(conn))
+                .map(SocketPlayer::blob)
+                .ifPresent(Resident::detach);
         conn.close(closeStatus);
-        speed.remove(conn);
     }
 
     @Override
     public synchronized void onMessage(WebSocket conn, String message) {
         try {
             ClientMovementRequest clientMovementRequest = mapper.readValue(message, ClientMovementRequest.class);
-            speed.put(conn, clientMovementRequest.toPoint().multiply(0.01));
+            players.get(conn).speed(clientMovementRequest.toPoint().multiply(0.01));
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             initiateAbnormalClose(conn);

@@ -27,7 +27,7 @@ public class World extends Blob {
         return "World";
     }
 
-    public Resident generateResident() {
+    public Resident generateResident(Runnable onBeingEaten) {
         Blob blob;
         Point2D position;
         double r;
@@ -45,7 +45,7 @@ public class World extends Blob {
                 break;
             }
         }
-        return new Resident(this, blob, position, r);
+        return new Resident(this, blob, position, r, onBeingEaten);
     }
 
     @Override
