@@ -1,9 +1,8 @@
-package blobs.world.pivoted;
+package blobs.world;
 
 import blobs.client.sent.ClientBlob;
 import blobs.client.sent.ClientView;
 import blobs.utils.IterableMap;
-import blobs.world.Blob;
 import blobs.world.point.Cartesian;
 
 import java.util.*;

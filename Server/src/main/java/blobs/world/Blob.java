@@ -1,7 +1,6 @@
 package blobs.world;
 
 import blobs.utils.IterableMap;
-import blobs.world.pivoted.PivotedBlobView;
 import blobs.world.point.Cartesian;
 import blobs.world.point.Point2D;
 
