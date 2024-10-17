@@ -1,20 +1,13 @@
 package blobs.world;
 
-import blobs.client.sent.ClientBlob;
-import blobs.client.sent.ClientView;
 import blobs.utils.IterableMap;
 import blobs.world.pivoted.PivotedBlobView;
 import blobs.world.pivoted.PivotedBlobViewHome;
-import blobs.world.pivoted.PivotedBlobViewHomeDispatcher;
 import blobs.world.point.Cartesian;
 import blobs.world.point.Point2D;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class Blob {
     private final List<Resident> residents;

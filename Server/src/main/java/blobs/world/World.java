@@ -4,7 +4,9 @@ import blobs.world.point.Cartesian;
 import blobs.world.point.Point2D;
 import blobs.world.point.Polar;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class World extends Blob {
     private final List<Blob> all = new ArrayList<>(256);
