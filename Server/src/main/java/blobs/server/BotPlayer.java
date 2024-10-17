@@ -13,8 +13,8 @@ public class BotPlayer extends Player {
     }
 
     public void randomizeAcceleration(Random random) {
-        angularAcceleration = random.nextDouble(-0.001, 0.001) * Math.PI;
-        outwardAcceleration = random.nextDouble(-0.0001, 0.0001);
+        angularAcceleration = random.nextDouble(-0.01, 0.01) * Math.PI;
+        outwardAcceleration = random.nextDouble(-0.001, 0.001);
     }
 
     public double angularAcceleration() {

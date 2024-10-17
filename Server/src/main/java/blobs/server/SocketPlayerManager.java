@@ -31,7 +31,7 @@ public class SocketPlayerManager {
         LinkedList<WebSocket> closed = new LinkedList<>();
         players().forEach((conn, player) -> {
             try {
-                conn.send(JSONSerializer.mapper.writeValueAsString(player.blob().pivoted().clientView(8)));
+                conn.send(JSONSerializer.mapper.writeValueAsString(player.blob().pivoted().clientView(12)));
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             } catch (WebsocketNotConnectedException e) {

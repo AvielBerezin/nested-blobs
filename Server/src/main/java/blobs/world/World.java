@@ -28,24 +28,40 @@ public class World extends Blob {
     }
 
     public Resident generateResident(Runnable onBeingEaten) {
-        Blob blob;
-        Point2D position;
-        double r;
-        while (true) {
-            blob = all.get(random.nextInt(all().size()));
-            r = random.nextDouble(0.1, 0.3);
-            position = Polar.randomInCircle(random).multiply(1 - r);
-            Point2D finalPosition = position;
-            double finalR = r;
-            if (blob.residents().stream().noneMatch(resident -> {
-                Cartesian displacement = resident.position().asCartesian().add(finalPosition.negate().asCartesian());
-                double sr = resident.r() + finalR;
-                return displacement.squared() < sr * sr;
-            })) {
-                break;
+        Blob blob = world;
+        Cirle circle;
+        mainLoop: while (true) {
+            for (int i = 0; i < 10; i++) {
+                Optional<Cirle> generatedCircle = tryGenerateCircle(blob);
+                if (generatedCircle.isEmpty()) {
+                    blob = blob.residents().get(random.nextInt(blob.residents().size()));
+                } else {
+                    circle = generatedCircle.get();
+                    break mainLoop;
+                }
             }
         }
-        return new Resident(this, blob, position, r, onBeingEaten);
+        return new Resident(this, blob, circle.position(), circle.r(), onBeingEaten);
+    }
+
+    private Optional<Cirle> tryGenerateCircle(Blob blob) {
+        double r;
+        Point2D position;
+        r = random.nextDouble(0.05, 0.2);
+        position = Polar.randomInCircle(random).multiply(1 - r);
+        Point2D finalPosition = position;
+        double finalR = r;
+        if (blob.residents().stream().noneMatch(resident -> {
+            Cartesian displacement = resident.position().asCartesian().add(finalPosition.negate().asCartesian());
+            double sr = resident.r() + finalR;
+            return displacement.squared() < sr * sr;
+        })) {
+            return Optional.of(new Cirle(position, r));
+        }
+        return Optional.empty();
+    }
+
+    private record Cirle(Point2D position, double r) {
     }
 
     @Override

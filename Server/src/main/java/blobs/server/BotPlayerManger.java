@@ -50,7 +50,7 @@ public class BotPlayerManger implements AutoCloseable {
                     scheduleAcceleration(player);
                 }
             }
-        }, random.nextInt(6_000), TimeUnit.MILLISECONDS);
+        }, random.nextInt(4_000), TimeUnit.MILLISECONDS);
     }
 
     public Set<BotPlayer> all() {
