@@ -42,14 +42,17 @@ socket.onmessage = (event) => {
     const view = JSON.parse(event.data);
     const { radius, player, blobs } = view;
     context.clearRect(0, 0, canvas.width, canvas.height);
+    function alpha(blob) {
+        return Math.min(1, Math.max(0.05, linearMap(radius / 12, radius, blob.r, 0.6, 0.2)));
+    }
     blobs.forEach(blob => {
         drawCircle(blob.x / radius, blob.y / radius, blob.r / radius,
                    blob.human ? 'red' : 'yellow',
-                   Math.min(1, Math.max(0.05, linearMap(1, radius, blob.r, 0.6, 0.3))));
+                   alpha(blob));
     });
     drawCircle(player.x / radius, player.y / radius, player.r / radius,
                'green',
-               Math.min(1, Math.max(0.05, linearMap(1, radius, player.r, 0.6, 0.3))));
+               alpha(player));
 };
 
 let moving = false;
