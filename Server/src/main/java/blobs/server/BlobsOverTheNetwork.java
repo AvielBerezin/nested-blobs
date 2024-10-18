@@ -1,6 +1,7 @@
 package blobs.server;
 
 import blobs.client.received.ClientMovementRequest;
+import blobs.client.received.ClientZoomRequest;
 import blobs.server.network.NetworkListener;
 import blobs.world.World;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -48,9 +49,15 @@ public class BlobsOverTheNetwork implements NetworkListener {
                 try {
                     clientMovementRequest = JSONSerializer.mapper.readValue(data, ClientMovementRequest.class);
                     socketPlayerManager.acceptMovementRequest(connectionRef.get(), clientMovementRequest);
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                    socketPlayerManager.abnormalClose(connectionRef.get());
+                } catch (JsonProcessingException e1) {
+                    try {
+                        ClientZoomRequest clientZoomRequest = JSONSerializer.mapper.readValue(data, ClientZoomRequest.class);
+                        socketPlayerManager.acceptZoomRequest(connectionRef.get(), clientZoomRequest);
+                    } catch (JsonProcessingException e2) {
+                        e2.printStackTrace();
+                        e1.printStackTrace();
+                        socketPlayerManager.abnormalClose(connectionRef.get());
+                    }
                 }
             }
 

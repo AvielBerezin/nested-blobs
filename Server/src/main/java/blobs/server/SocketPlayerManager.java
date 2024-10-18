@@ -1,6 +1,7 @@
 package blobs.server;
 
 import blobs.client.received.ClientMovementRequest;
+import blobs.client.received.ClientZoomRequest;
 import blobs.server.network.NetworkListener.Connection;
 import blobs.world.Resident;
 import blobs.world.World;
@@ -31,7 +32,7 @@ public class SocketPlayerManager {
         LinkedList<Connection> closed = new LinkedList<>();
         players().forEach((conn, player) -> {
             try {
-                conn.sendData(JSONSerializer.mapper.writeValueAsString(player.blob().pivoted().clientView(12)));
+                conn.sendData(JSONSerializer.mapper.writeValueAsString(player.blob().pivoted().clientView(player.zoom())));
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             } catch (WebsocketNotConnectedException e) {
@@ -62,6 +63,12 @@ public class SocketPlayerManager {
     public void acceptMovementRequest(Connection conn, ClientMovementRequest clientMovementRequest) {
         synchronized (world) {
             players().get(conn).speed(clientMovementRequest.toPoint().multiply(0.01));
+        }
+    }
+
+    public void acceptZoomRequest(Connection connection, ClientZoomRequest clientZoomRequest) {
+        synchronized (world) {
+            players.get(connection).zoom(clientZoomRequest.zoom());
         }
     }
 

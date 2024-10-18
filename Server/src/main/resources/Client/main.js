@@ -36,7 +36,7 @@ function linearMap(x0, x1, x, y0, y1) {
     return y0 + x * (y1 - y0) / (x1 - x0);
 }
 
-const socket = new WebSocket("ws://localhost:81")
+const socket = new WebSocket("ws://localhost:81");
 
 socket.onmessage = (event) => {
     const view = JSON.parse(event.data);
@@ -77,5 +77,8 @@ window.onmouseup = window.onmouseleave = () => {
     const angle = 0;
     const strength = 0;
     socket.send(JSON.stringify({angle, strength}));
+};
+window.onmousewheel = ({deltaY}) => {
+    socket.send(JSON.stringify({zoom: deltaY > 0}));
 };
 }
