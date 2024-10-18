@@ -10,8 +10,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class BlobsOverTheNetwork implements NetworkListener {
     private final BlobsPhysicsManager blobsPhysicsManager;
@@ -40,9 +39,9 @@ public class BlobsOverTheNetwork implements NetworkListener {
     }
 
     @Override
-    public void onNewConnection(BiConsumer<ConnectionListener, Consumer<Connection>> connectionListenerContinuation) {
+    public void onNewConnection(Function<ConnectionListener, Connection> connector) {
         AtomicReference<Connection> connectionRef = new AtomicReference<>();
-        connectionListenerContinuation.accept(new ConnectionListener() {
+        Connection connection = connector.apply(new ConnectionListener() {
             @Override
             public void onReceivedData(String data) {
                 ClientMovementRequest clientMovementRequest;
@@ -64,7 +63,9 @@ public class BlobsOverTheNetwork implements NetworkListener {
             public void onConnectionCorrupted() {
                 socketPlayerManager.playerDisconnected(connectionRef.get());
             }
-        }, connectionRef::set);
-        System.out.println("new connection to " + connectionRef.get().getRemoteSocketAddress() + " of " + socketPlayerManager.generatePlayer(connectionRef.get()).blob().nestedToString());
+        });
+        connectionRef.set(connection);
+        System.out.println("new connection to " + connection.getRemoteSocketAddress() +
+                           " of " + socketPlayerManager.generatePlayer(connection).blob().nestedToString());
     }
 }

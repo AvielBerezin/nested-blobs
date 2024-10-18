@@ -31,12 +31,11 @@ public class WebSocketServerForNetworkListener extends WebSocketServer implement
         AtomicBoolean executed = new AtomicBoolean(false);
         WebSocketConnection connection = connections.computeIfAbsent(conn, WebSocketConnection::new);
         readExecutor.execute(conn, () -> {
-            listener.onNewConnection((connectionListener, connectionConsumer) -> {
-                if (executed.getAndSet(true)) {
-                    return;
+            listener.onNewConnection((connectionListener) -> {
+                if (!executed.getAndSet(true)) {
+                    connection.listener(connectionListener);
                 }
-                connection.listener(connectionListener);
-                connectionConsumer.accept(connection);
+                return connection;
             });
             if (!executed.get()) {
                 connections.remove(conn);
@@ -133,9 +132,7 @@ public class WebSocketServerForNetworkListener extends WebSocketServer implement
                     System.out.println("connection corrupted");
                 }
             };
-            connectionListenerContinuation.accept(connectionListener, connection -> {
-            });
-
+            connectionListenerContinuation.apply(connectionListener);
         })) {
             server.setDaemon(true);
             server.run();
@@ -158,7 +155,12 @@ public class WebSocketServerForNetworkListener extends WebSocketServer implement
         public synchronized void sendData(String data) {
             writeExecutor.execute(socket, () -> {
                 if (connections.containsKey(socket)) {
-                    socket.send(data);
+                    if (socket.isOpen()) {
+                        socket.send(data);
+                    } else {
+                        connections.remove(socket);
+                        readExecutor.execute(socket, listener::onConnectionCorrupted);
+                    }
                 }
             });
         }

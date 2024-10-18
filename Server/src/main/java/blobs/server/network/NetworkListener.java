@@ -1,8 +1,7 @@
 package blobs.server.network;
 
 import java.net.InetSocketAddress;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 public interface NetworkListener {
     interface ConnectionListener {
@@ -17,5 +16,5 @@ public interface NetworkListener {
         void close(int closeStatus);
     }
 
-    void onNewConnection(BiConsumer<ConnectionListener, Consumer<Connection>> connectionListenerContinuation);
+    void onNewConnection(Function<ConnectionListener, Connection> connector);
 }
