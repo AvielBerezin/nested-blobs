@@ -1,15 +1,33 @@
-var width = window.innerWidth;
-var height = window.innerHeight;
+window.onload = () => {
+canvas = document.createElement("canvas");
+document.body.appendChild(canvas);
+let size = 0;
+function adjustSize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    size = Math.min(canvas.width, canvas.height);
+}
+window.onresize = adjustSize;
+adjustSize();
+context = canvas.getContext("2d");
 
-var stage = new Konva.Stage({
-    container: 'container',
-    width: width,
-    height: height,
-});
-
-var socket = new WebSocket("ws://localhost:81")
-var layer = new Konva.Layer();
-var size = 0.8 * Math.min(stage.width(), stage.height())
+function drawCircle(x, y, r, color, alpha) {
+    context.fillStyle = color;
+    context.globalAlpha = alpha;
+    context.beginPath();
+    context.arc(canvas.width / 2 + x * size / 2,
+                canvas.height / 2 + y * size / 2,
+                r * size / 2,
+                0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = 'black';
+    context.beginPath();
+    context.arc(canvas.width / 2 + x * size / 2,
+                canvas.height / 2 + y * size / 2,
+                r * size / 2,
+                0, Math.PI * 2);
+    context.stroke();
+}
 
 function linearMap(x0, x1, x, y0, y1) {
     if (x0 === x1) {
@@ -18,67 +36,46 @@ function linearMap(x0, x1, x, y0, y1) {
     return y0 + x * (y1 - y0) / (x1 - x0);
 }
 
+const socket = new WebSocket("ws://localhost:81")
+
 socket.onmessage = (event) => {
     const view = JSON.parse(event.data);
     const { radius, player, blobs } = view;
-    var first = true;
-    // add the layer to the stage
-    var newLayer = new Konva.Layer();
+    context.clearRect(0, 0, canvas.width, canvas.height);
     blobs.forEach(blob => {
-        newLayer.add(new Konva.Circle({
-            x: stage.width() / 2 + blob.x * size / radius / 2,
-            y: stage.height() / 2 + blob.y * size / radius / 2,
-            radius: blob.r * size / radius / 2,
-            fill: blob.human ? 'red' : 'yellow',
-            stroke: 'black',
-            strokeWidth: 4 * Math.min(1, 5 * blob.r),
-            opacity: Math.min(1, Math.max(0.05, linearMap(1, radius, blob.r, 0.6, 0.3))),
-        }));
+        drawCircle(blob.x / radius, blob.y / radius, blob.r / radius,
+                   blob.human ? 'red' : 'yellow',
+                   Math.min(1, Math.max(0.05, linearMap(1, radius, blob.r, 0.6, 0.3))));
     });
-    newLayer.add(new Konva.Circle({
-        x: stage.width() / 2 + player.x * size / radius / 2,
-        y: stage.height() / 2 + player.y * size / radius / 2,
-        radius: player.r * size / radius / 2,
-        fill: 'green',
-        stroke: 'black',
-        strokeWidth: 4 * Math.min(1, 5 * player.r),
-        opacity: Math.min(1, Math.max(0.05, linearMap(1, radius, player.r, 0.6, 0.3))),
-    }));
-    layer.destroy();
-    stage.add(newLayer);
-    layer = newLayer;
+    drawCircle(player.x / radius, player.y / radius, player.r / radius,
+               'green',
+               Math.min(1, Math.max(0.05, linearMap(1, radius, player.r, 0.6, 0.3))));
 };
 
-var moving = false;
+let moving = false;
 
-function sendMovement() {
-    const pointerPos = stage.getPointerPosition();
-    const x = pointerPos.x - stage.width() / 2;
-    const y = pointerPos.y - stage.height() / 2;
+function sendMovement(x, y) {
     const angle = Math.atan(y / x) + +(x < 0) * Math.PI;
-    const relDistance = Math.sqrt((x * x + y * y)) / size * 2;
-    const strength = (relDistance - 0.1) / (0.5 - 0.1);
+    const d = Math.sqrt(x * x + y * y);
+    const strength = (d - 0.1) / (0.5 - 0.1);
     socket.send(JSON.stringify({angle, strength}));
-    console.log(strength)
 }
-
-stage.on('pointerdown', function () {
+window.onmousedown = function ({x, y}) {
     moving = true;
-    sendMovement();
-});
-
-stage.on('pointermove', function () {
+    sendMovement((x - canvas.width / 2) * 2 / size,
+                 (y - canvas.height / 2) * 2 / size);
+};
+window.onmousemove = function ({x, y}) {
     if (!moving) {
         return;
     }
-    sendMovement();
-});
-
-stage.on('pointerup', function () {
+    sendMovement((x - canvas.width / 2) * 2 / size,
+                 (y - canvas.height / 2) * 2 / size);
+};
+window.onmouseup = window.onmouseleave = () => {
     moving = false;
-    var angle = 0;
-    var strength = 0;
+    const angle = 0;
+    const strength = 0;
     socket.send(JSON.stringify({angle, strength}));
-    console.log({angle, strength});
-});
-
+};
+}

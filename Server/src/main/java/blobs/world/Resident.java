@@ -43,17 +43,20 @@ public final class Resident extends Blob {
         String foodDescription = food.nestedToString();
         double foodR = food.r();
         swallow(food);
-        food.detach();
+        food.resize(food.r() * 0.75);
+//        food.detach();
         resize(Math.sqrt(r() * r() + foodR * foodR));
         System.out.println(thisDescription + " ate " + foodDescription);
-        food.onBeingEaten.run();
+//        food.onBeingEaten.run();
     }
 
     private void swallow(Resident food) {
         food.home().map(Blob::residents).ifPresent(residents -> residents.remove(food));
         food.home = this;
         food.home().map(Blob::residents).ifPresent(residents -> residents.add(food));
-        food.position(food.position().asCartesian().add(this.position().negate().asCartesian()));
+        food.position(food.position().asCartesian()
+                          .add(this.position().negate().asCartesian())
+                          .multiply(1 / r()));
         food.r(food.r() / r());
     }
 
