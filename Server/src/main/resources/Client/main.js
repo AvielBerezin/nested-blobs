@@ -7,7 +7,7 @@ var stage = new Konva.Stage({
     height: height,
 });
 
-var socket = new WebSocket("ws://localhost:80")
+var socket = new WebSocket("ws://localhost:81")
 var layer = new Konva.Layer();
 var size = 0.8 * Math.min(stage.width(), stage.height())
 
