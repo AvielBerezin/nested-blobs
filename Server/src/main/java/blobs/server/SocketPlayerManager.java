@@ -1,10 +1,10 @@
 package blobs.server;
 
 import blobs.client.received.ClientMovementRequest;
+import blobs.server.network.NetworkListener.Connection;
 import blobs.world.Resident;
 import blobs.world.World;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.java_websocket.WebSocket;
 import org.java_websocket.exceptions.WebsocketNotConnectedException;
 import org.java_websocket.framing.CloseFrame;
 
@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public class SocketPlayerManager {
-    private final Map<WebSocket, SocketPlayer> players;
+    private final Map<Connection, SocketPlayer> players;
     private final World world;
 
     public SocketPlayerManager(World world) {
@@ -23,15 +23,15 @@ public class SocketPlayerManager {
         players = new HashMap<>();
     }
 
-    public Map<WebSocket, SocketPlayer> players() {
+    public Map<Connection, SocketPlayer> players() {
         return players;
     }
 
     public void sendBlobsData() {
-        LinkedList<WebSocket> closed = new LinkedList<>();
+        LinkedList<Connection> closed = new LinkedList<>();
         players().forEach((conn, player) -> {
             try {
-                conn.send(JSONSerializer.mapper.writeValueAsString(player.blob().pivoted().clientView(12)));
+                conn.sendData(JSONSerializer.mapper.writeValueAsString(player.blob().pivoted().clientView(12)));
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             } catch (WebsocketNotConnectedException e) {
@@ -40,17 +40,17 @@ public class SocketPlayerManager {
                 e.printStackTrace();
             }
         });
-        closed.forEach(this::initiateAbnormalClose);
+        closed.forEach(this::abnormalClose);
     }
 
-    private void remove(WebSocket conn, int closeStatus) {
+    private void remove(Connection conn, int closeStatus) {
         Optional.ofNullable(players().remove(conn))
                 .map(SocketPlayer::blob)
                 .ifPresent(Resident::detach);
         conn.close(closeStatus);
     }
 
-    public void initiateAbnormalClose(WebSocket conn) {
+    public void abnormalClose(Connection conn) {
         synchronized (world) {
             InetSocketAddress address = conn.getRemoteSocketAddress();
             Resident resident = players().get(conn).blob();
@@ -59,13 +59,13 @@ public class SocketPlayerManager {
         }
     }
 
-    public void acceptMovementRequest(WebSocket conn, ClientMovementRequest clientMovementRequest) {
+    public void acceptMovementRequest(Connection conn, ClientMovementRequest clientMovementRequest) {
         synchronized (world) {
             players().get(conn).speed(clientMovementRequest.toPoint().multiply(0.01));
         }
     }
 
-    public void playerDisconnected(WebSocket conn) {
+    public void playerDisconnected(Connection conn) {
         synchronized (world) {
             Optional.ofNullable(players().remove(conn))
                     .map(SocketPlayer::blob)
@@ -73,17 +73,17 @@ public class SocketPlayerManager {
         }
     }
 
-    public void initiateEatenClose(SocketPlayer player) {
+    public void closeEaten(SocketPlayer player) {
         synchronized (world) {
             Resident resident = player.blob();
-            remove(player.socket(), CloseFrame.NORMAL);
-            System.out.println("server closed " + player.socket().getRemoteSocketAddress() + " of eaten " + resident);
+            remove(player.connection(), CloseFrame.NORMAL);
+            System.out.println("closed " + player.connection().getRemoteSocketAddress() + " of eaten " + resident);
         }
     }
 
-    public SocketPlayer generatePlayer(WebSocket conn) {
+    public SocketPlayer generatePlayer(Connection conn) {
         synchronized (world) {
-            SocketPlayer player = new SocketPlayer(this.world.generateResident(true, () -> initiateEatenClose(players().get(conn))), conn);
+            SocketPlayer player = new SocketPlayer(this.world.generateResident(true, () -> closeEaten(players().get(conn))), conn);
             players().put(conn, player);
             return player;
         }

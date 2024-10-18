@@ -45,8 +45,7 @@ public final class Resident extends Blob {
         swallow(food);
         food.detach();
         resize(newSize);
-        String eatenDescription = food.nestedToString();
-        System.out.println(thisDescription + " ate " + foodDescription + " into " + eatenDescription);
+        System.out.println(thisDescription + " ate " + foodDescription);
         food.onBeingEaten.run();
     }
 

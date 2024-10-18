@@ -1,19 +1,19 @@
 package blobs.server;
 
+import blobs.server.network.NetworkListener;
 import blobs.world.Resident;
 import blobs.world.point.Polar;
-import org.java_websocket.WebSocket;
 
 public class SocketPlayer extends Player {
-    private final WebSocket socket;
+    private final NetworkListener.Connection connection;
 
-    public SocketPlayer(Resident blob, WebSocket socket) {
+    public SocketPlayer(Resident blob, NetworkListener.Connection connection) {
         super(blob);
-        this.socket = socket;
+        this.connection = connection;
         this.speed(Polar.zero);
     }
 
-    public WebSocket socket() {
-        return socket;
+    public NetworkListener.Connection connection() {
+        return connection;
     }
 }
