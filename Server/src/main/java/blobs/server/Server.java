@@ -79,7 +79,11 @@ public class Server extends WebSocketServer implements AutoCloseable {
 
     @Override
     public void onError(WebSocket conn, Exception ex) {
-        System.err.println("an error occurred on connection " + conn.getRemoteSocketAddress());
+        if (conn == null) {
+            System.err.println("an error occurred");
+        } else {
+            System.err.println("an error occurred on connection " + conn.getRemoteSocketAddress());
+        }
         ex.printStackTrace();
     }
 
