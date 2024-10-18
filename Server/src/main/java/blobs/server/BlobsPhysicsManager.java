@@ -31,10 +31,10 @@ public class BlobsPhysicsManager {
                 moveEveryone();
                 feeding();
                 socketPlayerManager.sendBlobsData();
-                if (world.all().size() < 20 &&
+                if (world.all().size() < 50 &&
                     (lastGenerated == null ||
                      Duration.between(lastGenerated, Instant.now())
-                             .compareTo(Duration.ofSeconds(2))
+                             .compareTo(Duration.ofSeconds(1))
                      > 0)) {
                     botPlayerManger.generateBot();
                     lastGenerated = Instant.now();

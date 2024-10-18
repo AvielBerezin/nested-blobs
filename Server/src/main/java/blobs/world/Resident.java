@@ -41,10 +41,10 @@ public final class Resident extends Blob {
         }
         String thisDescription = this.nestedToString();
         String foodDescription = food.nestedToString();
-        double newSize = Math.sqrt(r() * r() + food.r() * food.r());
+        double foodR = food.r();
         swallow(food);
         food.detach();
-        resize(newSize);
+        resize(Math.sqrt(r() * r() + foodR * foodR));
         System.out.println(thisDescription + " ate " + foodDescription);
         food.onBeingEaten.run();
     }
@@ -59,7 +59,7 @@ public final class Resident extends Blob {
 
     private void resize(double newRadius) {
         double initialR = r();
-        r(newRadius);
+        r(Math.max(0.03, Math.min(0.5, newRadius)));
         residents().forEach(resident -> resident.position(resident.position().asCartesian().multiply(initialR / r())));
     }
 

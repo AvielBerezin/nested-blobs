@@ -47,7 +47,7 @@ public class World extends Blob {
     private Optional<Cirle> tryGenerateCircle(Blob blob) {
         double r;
         Point2D position;
-        r = random.nextDouble(0.05, 0.2);
+        r = random.nextDouble(0.03, 0.1);
         position = Polar.randomInCircle(random).multiply(1 - r);
         Point2D finalPosition = position;
         double finalR = r;
