@@ -71,6 +71,7 @@ public class Function implements Expression {
         for (Declarable parameter : parameters) {
             inputStreams.add(InputStreams.of("\n" + JSForm.indentationUnit.repeat(indentation + 1)));
             inputStreams.add(parameter.inputStream(indentation + 1));
+            inputStreams.add(InputStreams.of(","));
         }
         inputStreams.add(InputStreams.of(") => "));
         inputStreams.add(body.inputStream(indentation));

@@ -80,12 +80,16 @@ public class FuncIf {
 
         @Override
         public InputStream inputStream(int indentation) {
-            return InputStreams.of(InputStreams.of("if ("),
-                                   condition.inputStream(indentation + 1),
-                                   InputStreams.of("\n" + indentationUnit.repeat(indentation) + ") "),
-                                   thenClause.inputStream(indentation),
-                                   InputStreams.of(" else "),
-                                   new FuncOngoBlock(ongoing).inputStream(indentation));
+            LinkedList<InputStream> inputStreams = new LinkedList<>();
+            inputStreams.add(InputStreams.of("if ("));
+            inputStreams.add(condition.inputStream(indentation + 1));
+            inputStreams.add(InputStreams.of("\n" + indentationUnit.repeat(indentation) + ") "));
+            inputStreams.add(thenClause.inputStream(indentation));
+            if (!ongoing.isEmpty()) {
+                inputStreams.add(InputStreams.of(" else "));
+                inputStreams.add(new FuncOngoBlock(ongoing).inputStream(indentation));
+            }
+            return InputStreams.of(inputStreams);
         }
     }
 

@@ -55,6 +55,7 @@ public class GeneralObjectLiteral implements ObjectLiteral {
         for (ObjectRecord record : records) {
             inputStreams.add(InputStreams.of("\n" + indentationUnit.repeat(indentation + 1)));
             inputStreams.add(record.inputStream(indentation + 1));
+            inputStreams.add(InputStreams.of(","));
         }
         inputStreams.add(InputStreams.of("\n" + indentationUnit.repeat(indentation) + "}"));
         return InputStreams.of(inputStreams);

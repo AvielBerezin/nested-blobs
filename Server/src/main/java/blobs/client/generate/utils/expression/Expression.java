@@ -38,7 +38,7 @@ public interface Expression extends JSForm, IntoFuncTermStatement {
     default Division divide(Expression operand) {
         return Division.of(this, operand);
     }
-    default Equation equals(Expression operand) {
+    default Equation equate(Expression operand) {
         return Equation.of(this, operand);
     }
     default LessThen lessThen(Expression operand) {
