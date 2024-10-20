@@ -9,7 +9,7 @@ import java.io.InputStream;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
-public class Identifier implements Expression, Assignable {
+public class Identifier implements Expression, Assignable, Declarable {
     protected final String name;
 
     private Identifier(String name) {
@@ -56,9 +56,5 @@ public class Identifier implements Expression, Assignable {
 
     public InputStream inputStream(int indentation) {
         return new ByteArrayInputStream(name.getBytes());
-    }
-
-    public ImmutableDeclaration declareAs(Expression rhs) {
-        return ImmutableDeclaration.of(this, rhs);
     }
 }

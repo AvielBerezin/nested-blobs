@@ -1,7 +1,7 @@
 package blobs.client.generate.utils.statement.decleration;
 
+import blobs.client.generate.utils.expression.Declarable;
 import blobs.client.generate.utils.expression.Expression;
-import blobs.client.generate.utils.expression.Identifier;
 import blobs.client.utils.InputStreams;
 
 import java.io.InputStream;
@@ -11,15 +11,15 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class ImmutableDeclaration implements Declaration {
-    private final Identifier lhs;
+    private final Declarable lhs;
     private final Expression rhs;
 
-    private ImmutableDeclaration(Identifier lhs, Expression rhs) {
+    private ImmutableDeclaration(Declarable lhs, Expression rhs) {
         this.lhs = lhs;
         this.rhs = rhs;
     }
 
-    public static ImmutableDeclaration of(Identifier lhs, Expression rhs) {
+    public static ImmutableDeclaration of(Declarable lhs, Expression rhs) {
         return new ImmutableDeclaration(lhs, rhs);
     }
 

@@ -15,8 +15,8 @@ import java.util.Set;
 
 public class Function implements Expression {
     private final StackTraceElement[] creationTrace;
-    private final List<Identifier> parameters;
-    private final Set<Identifier> parametersSet;
+    private final List<Declarable> parameters;
+    private final Set<Declarable> parametersSet;
     private final LinkedList<FuncOngoStatement> ongoing;
     private FuncTermBlock body;
 
@@ -34,7 +34,7 @@ public class Function implements Expression {
         return new Function(refinedTrace);
     }
 
-    public Function addParameter(Identifier parameter) {
+    public Function addParameter(Declarable parameter) {
         if (parametersSet.contains(parameter)) {
             throw new IllegalArgumentException("method already contains " + parameter);
         }
@@ -68,7 +68,7 @@ public class Function implements Expression {
         }
         LinkedList<InputStream> inputStreams = new LinkedList<>();
         inputStreams.add(InputStreams.of("((("));
-        for (Identifier parameter : parameters) {
+        for (Declarable parameter : parameters) {
             inputStreams.add(InputStreams.of("\n" + JSForm.indentationUnit.repeat(indentation + 1)));
             inputStreams.add(parameter.inputStream(indentation + 1));
         }

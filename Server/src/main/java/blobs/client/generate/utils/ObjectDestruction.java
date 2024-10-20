@@ -1,7 +1,6 @@
-package blobs.client.generate.utils.expression.literal;
+package blobs.client.generate.utils;
 
-import blobs.client.generate.utils.JSForm;
-import blobs.client.generate.utils.expression.Expression;
+import blobs.client.generate.utils.expression.Declarable;
 import blobs.client.generate.utils.expression.Identifier;
 import blobs.client.utils.InputStreams;
 import blobs.server.JSONSerializer;
@@ -13,16 +12,25 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-public class GeneralObjectLiteral implements ObjectLiteral {
+public class ObjectDestruction implements Declarable {
     private final List<ObjectRecord> records;
     private final Set<String> keySet;
+    private final StackTraceElement[] creationTrace;
 
-    protected GeneralObjectLiteral() {
+    private ObjectDestruction(StackTraceElement[] creationTrace) {
         records = new LinkedList<>();
         keySet = new HashSet<>();
+        this.creationTrace = creationTrace;
     }
 
-    public GeneralObjectLiteral addEntry(String key, Expression expression) {
+    public static ObjectDestruction create() {
+        StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+        StackTraceElement[] refinedTrace = new StackTraceElement[trace.length - 2];
+        System.arraycopy(trace, 2, refinedTrace, 0, refinedTrace.length);
+        return new ObjectDestruction(refinedTrace);
+    }
+
+    public ObjectDestruction addEntry(String key, ObjectDestruction destruction) {
         try {
             key = JSONSerializer.mapper.writeValueAsString(key);
         } catch (JsonProcessingException e) {
@@ -32,23 +40,25 @@ public class GeneralObjectLiteral implements ObjectLiteral {
             throw new IllegalArgumentException("key " + key + " was already added");
         }
         keySet.add(key);
-        records.add(new FullRecordForm(key, expression));
+        records.add(new NestedForm(key, destruction));
         return this;
     }
 
-    public GeneralObjectLiteral addEntry(Identifier identifier) {
+    public ObjectDestruction addEntry(Identifier identifier) {
         if (keySet.contains(identifier.name())) {
             throw new IllegalArgumentException("key " + identifier.name() + " was already added");
         }
         keySet.add(identifier.name());
-        records.add(new ShortRecordForm(identifier));
+        records.add(new ImmediateForm(identifier));
         return this;
     }
 
     @Override
     public InputStream inputStream(int indentation) {
         if (records.isEmpty()) {
-            return InputStreams.of("{}");
+            RuntimeException emptyDestruction = new RuntimeException("empty destruction");
+            emptyDestruction.setStackTrace(creationTrace);
+            throw emptyDestruction;
         }
         LinkedList<InputStream> inputStreams = new LinkedList<>();
         inputStreams.add(InputStreams.of("{"));
@@ -63,15 +73,16 @@ public class GeneralObjectLiteral implements ObjectLiteral {
     private interface ObjectRecord extends JSForm {
     }
 
-    private record FullRecordForm(String key, Expression expression) implements ObjectRecord {
+    private record NestedForm(String key, ObjectDestruction destruction) implements ObjectRecord {
         @Override
         public InputStream inputStream(int indentation) {
-            return InputStreams.of(InputStreams.of(key + ": "),
-                                   expression.inputStream(indentation + 1));
+            return InputStreams.of(InputStreams.of("\n" + indentationUnit.repeat(indentation)),
+                                   InputStreams.of(key + ": "),
+                                   destruction.inputStream(indentation + 1));
         }
     }
 
-    private record ShortRecordForm(Identifier identifier) implements ObjectRecord {
+    private record ImmediateForm(Identifier identifier) implements ObjectRecord {
         @Override
         public InputStream inputStream(int indentation) {
             return identifier.inputStream(indentation);
