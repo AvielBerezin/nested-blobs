@@ -1,5 +1,5 @@
 window.onload = () => {
-canvas = document.createElement("canvas");
+const canvas = document.createElement("canvas");
 document.body.appendChild(canvas);
 let size = 0;
 function adjustSize() {
@@ -9,7 +9,7 @@ function adjustSize() {
 }
 window.onresize = adjustSize;
 adjustSize();
-context = canvas.getContext("2d");
+const context = canvas.getContext("2d");
 
 function drawCircle(x, y, r, color, alpha) {
     context.fillStyle = color;
