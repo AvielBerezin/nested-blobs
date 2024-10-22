@@ -29,10 +29,10 @@ public class World extends Blob {
 
     public Resident generateResident(boolean isHuman, Runnable onBeingEaten) {
         Blob blob = world;
-        Cirle circle;
+        Circle circle;
         mainLoop: while (true) {
             for (int i = 0; i < 10; i++) {
-                Optional<Cirle> generatedCircle = tryGenerateCircle(blob);
+                Optional<Circle> generatedCircle = tryGenerateCircle(blob);
                 if (generatedCircle.isEmpty()) {
                     blob = blob.residents().get(random.nextInt(blob.residents().size()));
                 } else {
@@ -44,7 +44,7 @@ public class World extends Blob {
         return new Resident(this, blob, circle.position(), circle.r(), isHuman, onBeingEaten);
     }
 
-    private Optional<Cirle> tryGenerateCircle(Blob blob) {
+    private Optional<Circle> tryGenerateCircle(Blob blob) {
         double r;
         Point2D position;
         r = random.nextDouble(0.03, 0.1);
@@ -56,12 +56,12 @@ public class World extends Blob {
             double sr = resident.r() + finalR;
             return displacement.squared() < sr * sr;
         })) {
-            return Optional.of(new Cirle(position, r));
+            return Optional.of(new Circle(position, r));
         }
         return Optional.empty();
     }
 
-    private record Cirle(Point2D position, double r) {
+    private record Circle(Point2D position, double r) {
     }
 
     @Override
