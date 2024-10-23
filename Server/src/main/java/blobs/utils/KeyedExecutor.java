@@ -1,4 +1,4 @@
-package blobs.server.network;
+package blobs.utils;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
